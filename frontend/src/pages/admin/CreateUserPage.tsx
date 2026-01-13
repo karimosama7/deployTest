@@ -7,10 +7,14 @@ import { Select } from '../../components/common/Select';
 import { MultiSelect } from '../../components/common/MultiSelect';
 import { Modal } from '../../components/common/Modal';
 import { UserRole } from '../../context/AuthContext';
-import { ArrowRight, Copy, Check } from 'lucide-react';
+import { ArrowRight, Copy, Check, UserPlus } from 'lucide-react';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import { motion } from 'framer-motion';
 
 export const CreateUserPage = () => {
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const [searchParams] = useSearchParams();
     const defaultRole = (searchParams.get('role') as UserRole) || 'STUDENT';
 
@@ -35,7 +39,7 @@ export const CreateUserPage = () => {
     const [createdUser, setCreatedUser] = useState<{ username: string, password: string } | null>(null);
     const [copied, setCopied] = useState(false);
 
-    // Mock Options
+    // TODO: Fetch from backend API /api/admin/grades and /api/admin/subjects
     const gradeOptions = [
         { value: '1', label: 'الصف الأول الابتدائي' },
         { value: '2', label: 'الصف الثاني الابتدائي' },
@@ -46,12 +50,10 @@ export const CreateUserPage = () => {
     ];
 
     const subjectOptions = [
-        { value: 'MATH', label: 'الرياضيات - Math' },
-        { value: 'SCIENCE', label: 'العلوم - Science' },
-        { value: 'ARABIC', label: 'اللغة العربية' },
-        { value: 'ENGLISH', label: 'اللغة الإنجليزية' },
-        { value: 'RELIGION', label: 'التربية الدينية' },
-        { value: 'SOCIAL', label: 'الدراسات الاجتماعية' },
+        { value: '1', label: 'الرياضيات - Math' },
+        { value: '2', label: 'العلوم - Science' },
+        { value: '3', label: 'اللغة العربية' },
+        { value: '4', label: 'اللغة الإنجليزية' },
     ];
 
     const subscriptionOptions = [
@@ -64,17 +66,44 @@ export const CreateUserPage = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate API call & Credential Generation
-        setTimeout(() => {
-            const username = formData.email.split('@')[0] || `user_${Math.floor(Math.random() * 1000)}`;
-            const password = Math.random().toString(36).slice(-8); // Random 8 char password
+        try {
+            // Prepare Payload based on CreateUserRequest DTO
+            const payload: any = {
+                fullName: formData.fullName,
+                email: formData.email,
+                phone: formData.phone,
+                role: role,
+            };
 
-            console.log('Creating user:', { ...formData, role, username, password });
+            if (role === 'TEACHER') {
+                payload.subjectIds = formData.subjects.map(s => Number(s));
+            } else if (role === 'STUDENT') {
+                payload.gradeId = Number(formData.grade);
+            }
 
-            setCreatedUser({ username, password });
-            setIsLoading(false);
+            let endpoint = '/admin/users';
+            if (role === 'TEACHER') endpoint = '/admin/teachers';
+            else if (role === 'STUDENT') endpoint = '/admin/students';
+            else if (role === 'PARENT') endpoint = '/admin/parents';
+
+            const response = await api.post(endpoint, payload);
+            const data = response.data;
+
+            // Success
+            setCreatedUser({
+                username: data.username,
+                password: data.generatedPassword
+            });
             setResultModalOpen(true);
-        }, 1000);
+            addToast('تم إنشاء المستخدم بنجاح', 'success');
+
+        } catch (error: any) {
+            console.error("Failed to create user", error);
+            const msg = error.response?.data?.message || 'فشل إنشاء المستخدم. تأكد من البيانات.';
+            addToast(msg, 'error');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleCopy = () => {
@@ -91,32 +120,55 @@ export const CreateUserPage = () => {
         navigate('/admin/users');
     };
 
+    const containerVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                type: 'spring',
+                stiffness: 100,
+                damping: 20
+            }
+        }
+    };
+
     return (
-        <div className="space-y-6">
+        <motion.div
+            className="space-y-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
             <div className="flex items-center justify-between">
                 <div className="flex items-center">
                     <button
                         onClick={() => navigate('/admin/users')}
-                        className="ml-4 p-2 rounded-full hover:bg-gray-100 text-gray-500"
+                        className="ml-4 p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
                     >
                         <ArrowRight className="h-6 w-6" />
                     </button>
-                    <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                        إضافة {role === 'TEACHER' ? 'معلم' : role === 'STUDENT' ? 'طالب' : role === 'PARENT' ? 'ولي أمر' : 'مستخدم'} جديد
-                    </h2>
+                    <div>
+                        <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate flex items-center gap-2">
+                            <span className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                                <UserPlus className="h-6 w-6" />
+                            </span>
+                            إضافة {role === 'TEACHER' ? 'معلم' : role === 'STUDENT' ? 'طالب' : role === 'PARENT' ? 'ولي أمر' : 'مستخدم'} جديد
+                        </h2>
+                    </div>
                 </div>
             </div>
 
-            <Card>
+            <Card className="border-t-4 border-t-indigo-500 shadow-lg">
                 <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
                     {/* Role Selection */}
-                    <div className="bg-gray-50 p-4 rounded-md">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
                             نوع المستخدم
                         </label>
                         <div className="flex flex-wrap gap-4">
                             {(['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] as UserRole[]).map((r) => (
-                                <label key={r} className="inline-flex items-center cursor-pointer">
+                                <label key={r} className={`inline-flex items-center cursor-pointer p-3 rounded-lg border transition-all ${role === r ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-500' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
                                     <input
                                         type="radio"
                                         className="form-radio h-4 w-4 text-indigo-600 focus:ring-indigo-500"
@@ -125,7 +177,7 @@ export const CreateUserPage = () => {
                                         checked={role === r}
                                         onChange={(e) => setRole(e.target.value as UserRole)}
                                     />
-                                    <span className="mr-2 text-gray-700">
+                                    <span className={`mr-2 font-medium ${role === r ? 'text-indigo-900' : 'text-gray-700'}`}>
                                         {r === 'ADMIN' && 'مدير'}
                                         {r === 'TEACHER' && 'معلم'}
                                         {r === 'STUDENT' && 'طالب'}
@@ -145,6 +197,7 @@ export const CreateUserPage = () => {
                                 required
                                 value={formData.fullName}
                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                className="transition-all focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500"
                             />
                         </div>
 
@@ -166,17 +219,25 @@ export const CreateUserPage = () => {
 
                         {/* Teacher Specific Fields */}
                         {role === 'TEACHER' && (
-                            <>
-                                <div className="col-span-2 border-t pt-4 mt-2">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-4">بيانات المعلم</h4>
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 border-t pt-6 mt-2"
+                            >
+                                <div className="col-span-2">
+                                    <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                        <span className="w-1 h-4 bg-indigo-500 rounded-full"></span>
+                                        بيانات المعلم
+                                    </h4>
                                 </div>
                                 <div className="col-span-2 sm:col-span-1">
                                     <MultiSelect
-                                        label="المواد الدراسية (التي يقوم بتدريسها)"
+                                        label="المواد الدراسية"
                                         options={subjectOptions}
                                         value={formData.subjects}
                                         onChange={(val) => setFormData({ ...formData, subjects: val })}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">يجب أن تكون المواد مضافة مسبقاً في النظام</p>
                                 </div>
                                 <div className="col-span-2 sm:col-span-1">
                                     <MultiSelect
@@ -186,14 +247,21 @@ export const CreateUserPage = () => {
                                         onChange={(val) => setFormData({ ...formData, grades: val })}
                                     />
                                 </div>
-                            </>
+                            </motion.div>
                         )}
 
                         {/* Student Specific Fields */}
                         {role === 'STUDENT' && (
-                            <>
-                                <div className="col-span-2 border-t pt-4 mt-2">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-4">بيانات الطالب</h4>
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 border-t pt-6 mt-2"
+                            >
+                                <div className="col-span-2">
+                                    <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                        <span className="w-1 h-4 bg-green-500 rounded-full"></span>
+                                        بيانات الطالب
+                                    </h4>
                                 </div>
                                 <Select
                                     label="الصف الدراسي"
@@ -211,13 +279,14 @@ export const CreateUserPage = () => {
                                     value={formData.subscriptionType}
                                     onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value })}
                                 />
-                            </>
+                            </motion.div>
                         )}
 
                         {/* Parent Specific Fields */}
                         {role === 'PARENT' && (
-                            <div className="col-span-2 border-t pt-4 mt-2">
-                                <p className="text-sm text-gray-500">
+                            <div className="col-span-2 border-t pt-4 mt-2 bg-blue-50 p-4 rounded-lg">
+                                <p className="text-sm text-blue-700 flex items-center gap-2">
+                                    <span className="font-bold">ملاحظة:</span>
                                     يمكنك ربط الأبناء بولي الأمر من صفحة "الطلاب" أو صفحة "أولياء الأمور" بعد إنشاء الحساب.
                                 </p>
                             </div>
@@ -234,7 +303,7 @@ export const CreateUserPage = () => {
                         >
                             إلغاء
                         </Button>
-                        <Button type="submit" isLoading={isLoading}>
+                        <Button type="submit" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700 shadow-md">
                             إنشاء المستخدم
                         </Button>
                     </div>
@@ -251,38 +320,44 @@ export const CreateUserPage = () => {
                     <p>يرجى نسخ بيانات الدخول التالية وإرسالها للمستخدم.</p>
                 </div>
 
-                <div className="mt-4 bg-gray-50 p-4 rounded-md border border-gray-200" dir="ltr">
-                    <div className="flex justify-between items-start">
-                        <div className="space-y-2 text-left">
-                            <div>
-                                <span className="text-xs text-gray-500 uppercase">Username</span>
-                                <p className="font-mono font-bold text-gray-900">{createdUser?.username}</p>
+                <div className="mt-4 bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-inner" dir="ltr">
+                    <div className="flex justify-between items-center">
+                        <div className="space-y-3 text-left w-full">
+                            <div className="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                <div>
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider block">Username</span>
+                                    <p className="font-mono font-bold text-gray-900 text-lg">{createdUser?.username}</p>
+                                </div>
                             </div>
-                            <div>
-                                <span className="text-xs text-gray-500 uppercase">Password</span>
-                                <p className="font-mono font-bold text-gray-900">{createdUser?.password}</p>
+                            <div className="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                <div>
+                                    <span className="text-xs text-gray-400 uppercase tracking-wider block">Password</span>
+                                    <p className="font-mono font-bold text-gray-900 text-lg">{createdUser?.password}</p>
+                                </div>
                             </div>
                         </div>
-                        <button
-                            onClick={handleCopy}
-                            className="p-2 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-indigo-50 transition-colors"
-                            title="Copy to clipboard"
-                        >
-                            {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
-                        </button>
+                        <div className="ml-4">
+                            <button
+                                onClick={handleCopy}
+                                className={`p-3 rounded-full transition-all duration-300 ${copied ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'}`}
+                                title="Copy to clipboard"
+                            >
+                                {copied ? <Check className="h-6 w-6" /> : <Copy className="h-6 w-6" />}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-5 sm:mt-6">
+                <div className="mt-6 sm:mt-8">
                     <Button
                         type="button"
-                        className="w-full justify-center"
+                        className="w-full justify-center py-3 text-lg"
                         onClick={handleCloseModal}
                     >
-                        تم
+                        تم، العودة للقائمة
                     </Button>
                 </div>
             </Modal>
-        </div>
+        </motion.div>
     );
 };

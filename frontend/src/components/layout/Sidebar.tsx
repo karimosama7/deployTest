@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { Home, Users, BookOpen, GraduationCap, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
+import Logo from '../../assets/logo.png';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -39,10 +40,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div
                     className={cn(
                         "relative flex-1 flex flex-col max-w-xs w-full bg-white transform transition duration-300 ease-in-out",
-                        isOpen ? "translate-x-0" : "translate-x-full" // Changed for RTL: translate-x-full instead of -translate-x-full could be needed depending on implementation, but usually transform origin matters. Tailwind RTL support might need specific plugins, but let's stick to simple overrides if needed. Actually standard sidebar usually slides from start. In RTL start is right.
+                        isOpen ? "translate-x-0" : "translate-x-full"
                     )}
                 >
-                    <div className="absolute top-0 left-0 -ml-12 pt-2"> {/* Changed right/-mr-12 to left/-ml-12 for RTL close button */}
+                    <div className="absolute top-0 left-0 -ml-12 pt-2">
                         <button
                             className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
                             onClick={onClose}
@@ -52,10 +53,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-                        <div className="flex-shrink-0 flex items-center px-4">
-                            <span className="text-xl font-bold text-indigo-600">أبناؤنا - أدمن</span>
+                        <div className="flex-shrink-0 flex items-center px-4 justify-center">
+                            <img src={Logo} alt="Abnaouna" className="h-12 w-auto" />
                         </div>
-                        <nav className="mt-5 px-2 space-y-1">
+                        <nav className="mt-8 px-2 space-y-1">
                             {navigation.map((item) => (
                                 <NavLink
                                     key={item.href}
@@ -73,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                 >
                                     <item.icon
                                         className={cn(
-                                            'ml-4 h-6 w-6 flex-shrink-0', // Changed mr-4 to ml-4 for RTL
+                                            'ml-4 h-6 w-6 flex-shrink-0',
                                         )}
                                         aria-hidden="true"
                                     />
@@ -89,12 +90,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
             {/* Static sidebar for desktop */}
             <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-30">
-                <div className="flex-1 flex flex-col min-h-0 border-l border-gray-200 bg-white"> {/* Changed border-r to border-l for RTL layout if sidebar is on right, but standard dashboard usually puts sidebar on start (right in RTL). Tailwind `border-r` in RTL might stay on right. Let's assume standard behavior: Sidebar on Right. */}
+                <div className="flex-1 flex flex-col min-h-0 border-l border-gray-200 bg-white">
                     <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-                        <div className="flex items-center flex-shrink-0 px-4">
-                            <span className="text-xl font-bold text-indigo-600">أبناؤنا</span>
+                        <div className="flex items-center flex-shrink-0 px-4 justify-center">
+                            <img src={Logo} alt="Abnaouna" className="h-14 w-auto object-contain" />
                         </div>
-                        <nav className="mt-5 flex-1 px-2 space-y-1">
+                        <nav className="mt-8 flex-1 px-2 space-y-1">
                             {navigation.map((item) => (
                                 <NavLink
                                     key={item.href}
@@ -105,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                             isActive
                                                 ? 'bg-indigo-50 text-indigo-600'
                                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                                            'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
+                                            'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors'
                                         )
                                     }
                                 >
@@ -114,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                             <item.icon
                                                 className={cn(
                                                     isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-500',
-                                                    'ml-3 h-6 w-6 flex-shrink-0'
+                                                    'ml-3 h-6 w-6 flex-shrink-0 transition-colors'
                                                 )}
                                                 aria-hidden="true"
                                             />
@@ -126,9 +127,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </nav>
                     </div>
                     <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-                        <div className="flex items-center">
-                            <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-700">{user?.fullName}</p>
+                        <div className="flex items-center w-full">
+                            <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold ml-3">
+                                {user?.fullName?.charAt(0) || 'A'}
+                            </div>
+                            <div className="ml-3 overflow-hidden">
+                                <p className="text-sm font-medium text-gray-700 truncate">{user?.fullName}</p>
                                 <p className="text-xs font-medium text-gray-500">
                                     {user?.role === 'ADMIN' ? 'مدير النظام' : user?.role}
                                 </p>
