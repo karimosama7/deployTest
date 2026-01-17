@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth, UserRole } from '../context/AuthContext';
 import { LoginPage } from '../pages/auth/LoginPage';
+import { LandingPage } from '../pages/LandingPage';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { StudentLayout } from '../components/layout/StudentLayout';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
@@ -37,7 +38,7 @@ export const AppRoutes = () => {
         <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
 
             {/* Student Routes */}
             <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>

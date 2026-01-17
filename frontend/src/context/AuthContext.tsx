@@ -1,120 +1,98 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
+import { useToast } from './ToastContext';
 
-// Types
 export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
 
-export interface User {
-  id: string;
+interface User {
+  id: string; // Backend sends Long, but JS handles as number/string
   username: string;
   fullName: string;
-  email: string;
+  email?: string;
   role: UserRole;
+  avatar?: string;
 }
 
-interface AuthState {
+interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-}
-
-interface AuthContextType extends AuthState {
-  login: (username: string, password: string) => Promise<void>;
+  login: (credentials: any) => Promise<void>;
   logout: () => void;
 }
 
-// Initial State
-const initialState: AuthState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  error: null,
-};
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock Users for Dev 1 Task
-const MOCK_USERS: Record<string, User> = {
-  'admin': { id: '1', username: 'admin', fullName: 'System Admin', email: 'admin@abnaouna.com', role: 'ADMIN' },
-  'teacher': { id: '2', username: 'teacher', fullName: 'Mr. Ahmed', email: 'teacher@abnaouna.com', role: 'TEACHER' },
-  'student': { id: '3', username: 'student', fullName: 'Ahmed Hassan', email: 'student@abnaouna.com', role: 'STUDENT' },
-  'parent': { id: '4', username: 'parent', fullName: 'Mr. Hassan', email: 'parent@abnaouna.com', role: 'PARENT' },
-};
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AuthState>(initialState);
-
-  // Check for stored token on mount
+  // Fetch user profile on mount if token exists
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      try {
-        setState({
-          user: JSON.parse(storedUser),
-          token: storedToken,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
-      } catch (e) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setState(s => ({ ...s, isLoading: false }));
-      }
-    } else {
-      setState(s => ({ ...s, isLoading: false }));
-    }
-  }, []);
-
-  const login = async (username: string, password: string) => {
-    setState(s => ({ ...s, isLoading: true, error: null }));
-
-    // Simulate API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        // Simple Mock Authenticator
-        if (MOCK_USERS[username] && password === '123456') { // Mock password
-          const user = MOCK_USERS[username];
-          const token = 'mock-jwt-token-' + user.id; // Mock token
-
-          localStorage.setItem('token', token);
-          localStorage.setItem('user', JSON.stringify(user));
-
-          setState({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-          resolve();
-        } else {
-          setState(s => ({
-            ...s,
-            isLoading: false,
-            error: 'Invalid username or password'
-          }));
-          reject(new Error('Invalid credentials'));
+    const fetchUser = async () => {
+      if (token) {
+        try {
+          const response = await api.get('/auth/me'); // GET /auth/me returns User details
+          setUser(response.data);
+        } catch (err) {
+          console.error('Failed to fetch user', err);
+          logout();
+        } finally {
+          setIsLoading(false);
         }
-      }, 1000);
-    });
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [token]);
+
+  const login = async (credentials: any) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/auth/login', credentials);
+      // AuthResponse: { token, userId, username, fullName, role, message }
+      const { token: newToken, userId, username, fullName, role } = response.data;
+
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+
+      // Set user state immediately from login response
+      setUser({
+        id: userId.toString(),
+        username,
+        fullName,
+        role
+      });
+
+      addToast('تم تسجيل الدخول بنجاح', 'success');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'فشل تسجيل الدخول. تأكد من البيانات.';
+      setError(msg);
+      addToast(msg, 'error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setState({
-      ...initialState,
-      isLoading: false,
-    });
+    setToken(null);
+    setUser(null);
+    addToast('تم تسجيل الخروج', 'info');
+    // Redirect will be handled by ProtectedRoute or caller
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, error, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
