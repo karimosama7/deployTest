@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
-import { Plus } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
+import { Modal } from '../../components/common/Modal';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -66,9 +67,27 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
         }
     };
 
+
     useEffect(() => {
         fetchUsers();
     }, [roleFilter]);
+
+    // Link Children State
+    const [linkModalOpen, setLinkModalOpen] = useState(false);
+    const [selectedParent, setSelectedParent] = useState<UserData | null>(null);
+    const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
+
+    const handleLinkChild = (parent: UserData) => {
+        setSelectedParent(parent);
+        setSelectedChildren([]); // Reset or fetch existing links
+        setLinkModalOpen(true);
+    };
+
+    const submitLinkChildren = () => {
+        // API Call would go here: api.post(`/admin/parents/${selectedParent.id}/children`, { childIds: selectedChildren })
+        addToast('تم ربط الأبناء بنجاح', 'success');
+        setLinkModalOpen(false);
+    };
 
     const columns = [
         { header: 'الاسم', accessor: 'fullName' as const },
@@ -137,11 +156,73 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                     <DataTable
                         data={users}
                         columns={columns}
-                        onEdit={(user) => console.log('Edit', user)}
+                        onEdit={(user) => navigate(`/admin/users/create?mode=edit&id=${user.id}&role=${user.role}`)}
                         onDelete={(user) => console.log('Delete', user)}
+                        actions={(user) => (
+                            <div className="flex items-center">
+                                {user.role === 'PARENT' && (
+                                    <button
+                                        onClick={() => handleLinkChild(user)}
+                                        className="text-indigo-600 hover:text-indigo-900 ml-3"
+                                        title="ربط أبناء"
+                                    >
+                                        <UserPlus className="h-5 w-5" />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={async () => {
+                                        if (window.confirm(`هل أنت متأكد من ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} هذا المستخدم؟`)) {
+                                            try {
+                                                await api.put(`/admin/users/${user.id}/activate?active=${!user.isActive}`);
+                                                addToast(`تم ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} المستخدم بنجاح`, 'success');
+                                                fetchUsers(); // Refresh list
+                                            } catch (err) {
+                                                console.error(err);
+                                                addToast('حدث خطأ أثناء تغيير حالة المستخدم', 'error');
+                                            }
+                                        }
+                                    }}
+                                    className={`ml-3 font-medium ${user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                                >
+                                    {user.isActive ? 'إلغاء التفعيل' : 'تفعيل'}
+                                </button>
+                            </div>
+                        )}
                     />
                 </motion.div>
             )}
+
+            {/* Link Children Modal */}
+            <Modal
+                isOpen={linkModalOpen}
+                onClose={() => setLinkModalOpen(false)}
+                title={`ربط أبناء بـ ${selectedParent?.fullName}`}
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-500">اختر الطلاب الذين تود ربطهم بهذا الولي للأمر.</p>
+
+                    {/* Mock Student Select for Prototype */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">اختر الطلاب</label>
+                        <select
+                            multiple
+                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md h-32"
+                            value={selectedChildren}
+                            onChange={(e) => setSelectedChildren(Array.from(e.target.selectedOptions, option => option.value))}
+                        >
+                            <option value="1">أحمد محمد (الصف السادس)</option>
+                            <option value="2">سارة علي (الصف الرابع)</option>
+                            <option value="3">كريم محمود (الصف الخامس)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-2">اضغط مفتاح Ctrl (أو Cmd) لاختيار أكثر من طالب.</p>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                        <Button variant="secondary" onClick={() => setLinkModalOpen(false)} className="ml-2">إلغاء</Button>
+                        <Button onClick={submitLinkChildren}>حفظ التغييرات</Button>
+                    </div>
+                </div>
+            </Modal>
         </motion.div>
     );
 };

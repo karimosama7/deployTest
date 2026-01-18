@@ -16,6 +16,8 @@ export const CreateUserPage = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [searchParams] = useSearchParams();
+    const isEditMode = searchParams.get('mode') === 'edit';
+    const editUserId = searchParams.get('id');
     const defaultRole = (searchParams.get('role') as UserRole) || 'STUDENT';
 
     // Form State
@@ -34,12 +36,31 @@ export const CreateUserPage = () => {
 
     const [isLoading, setIsLoading] = useState(false);
 
+    // Load user data for edit mode
+    React.useEffect(() => {
+        if (isEditMode && editUserId) {
+            // In a real app, this would fetch from /api/users/${editUserId}
+            // For prototype, we'll simulate loading mock data based on ID/Role
+            console.log("Loading user for edit:", editUserId);
+            // Mock pre-fill
+            setFormData({
+                fullName: 'تعديل - ' + (role === 'STUDENT' ? 'أحمد محمد' : 'مستخدم'),
+                email: 'edit@example.com',
+                phone: '0123456789',
+                subjects: ['1', '2'],
+                grades: ['4', '5'],
+                grade: '6',
+                subscriptionType: 'PAID_YEARLY'
+            });
+        }
+    }, [isEditMode, editUserId, role]);
+
     // Result State (for modal)
     const [resultModalOpen, setResultModalOpen] = useState(false);
     const [createdUser, setCreatedUser] = useState<{ username: string, password: string } | null>(null);
     const [copied, setCopied] = useState(false);
 
-    // TODO: Fetch from backend API /api/admin/grades and /api/admin/subjects
+    // ... options ...
     const gradeOptions = [
         { value: '1', label: 'الصف الأول الابتدائي' },
         { value: '2', label: 'الصف الثاني الابتدائي' },
@@ -153,7 +174,9 @@ export const CreateUserPage = () => {
                             <span className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
                                 <UserPlus className="h-6 w-6" />
                             </span>
-                            إضافة {role === 'TEACHER' ? 'معلم' : role === 'STUDENT' ? 'طالب' : role === 'PARENT' ? 'ولي أمر' : 'مستخدم'} جديد
+                            {isEditMode ? 'تعديل بيانات ' : 'إضافة '}
+                            {role === 'TEACHER' ? 'معلم' : role === 'STUDENT' ? 'طالب' : role === 'PARENT' ? 'ولي أمر' : 'مستخدم'}
+                            {isEditMode ? '' : ' جديد'}
                         </h2>
                     </div>
                 </div>
@@ -161,21 +184,22 @@ export const CreateUserPage = () => {
 
             <Card className="border-t-4 border-t-indigo-500 shadow-lg">
                 <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
-                    {/* Role Selection */}
+                    {/* Role Selection - Disable in Edit Mode */}
                     <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border border-gray-100">
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                             نوع المستخدم
                         </label>
                         <div className="flex flex-wrap gap-4">
                             {(['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] as UserRole[]).map((r) => (
-                                <label key={r} className={`inline-flex items-center cursor-pointer p-3 rounded-lg border transition-all ${role === r ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-500' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                <label key={r} className={`inline-flex items-center cursor-pointer p-3 rounded-lg border transition-all ${role === r ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-500' : 'bg-white border-gray-200 hover:bg-gray-50'} ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                     <input
                                         type="radio"
                                         className="form-radio h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                                         name="role"
                                         value={r}
                                         checked={role === r}
-                                        onChange={(e) => setRole(e.target.value as UserRole)}
+                                        onChange={(e) => !isEditMode && setRole(e.target.value as UserRole)}
+                                        disabled={isEditMode}
                                     />
                                     <span className={`mr-2 font-medium ${role === r ? 'text-indigo-900' : 'text-gray-700'}`}>
                                         {r === 'ADMIN' && 'مدير'}
@@ -304,7 +328,7 @@ export const CreateUserPage = () => {
                             إلغاء
                         </Button>
                         <Button type="submit" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700 shadow-md">
-                            إنشاء المستخدم
+                            {isEditMode ? 'حفظ التغييرات' : 'إنشاء المستخدم'}
                         </Button>
                     </div>
                 </form>

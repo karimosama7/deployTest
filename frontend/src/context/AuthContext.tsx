@@ -36,6 +36,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const fetchUser = async () => {
       if (token) {
+        // CHECK FOR MOCK TOKEN
+        if (token.startsWith('mock-jwt-token-')) {
+          const roleSuffix = token.replace('mock-jwt-token-', '');
+          // Simple mapping based on suffix
+          let role = 'STUDENT';
+          if (roleSuffix === 'ADMIN') role = 'ADMIN';
+          if (roleSuffix === 'TEACHER') role = 'TEACHER';
+          if (roleSuffix === 'PARENT') role = 'PARENT';
+
+          setUser({
+            id: '1',
+            username: role.toLowerCase(),
+            fullName: role === 'STUDENT' ? 'أحمد محمد' : (role === 'ADMIN' ? 'المدير' : 'الأستاذ'),
+            role: role as UserRole
+          });
+          setIsLoading(false);
+          return;
+        }
+
         try {
           const response = await api.get('/auth/me'); // GET /auth/me returns User details
           setUser(response.data);
@@ -57,6 +76,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
+      // MOCK LOGIN FOR DEVELOPMENT - DISABLED TO USE REAL BACKEND
+      /*
+      if (credentials.username === 'student' || credentials.username === 'admin' || credentials.username === 'teacher' || credentials.username === 'parent') {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        let role = 'STUDENT';
+        if (credentials.username === 'admin') role = 'ADMIN';
+        if (credentials.username === 'teacher') role = 'TEACHER';
+        if (credentials.username === 'parent') role = 'PARENT';
+
+        const mockUser = {
+          token: 'mock-jwt-token-' + role,
+          userId: 1,
+          username: credentials.username,
+          fullName: role === 'STUDENT' ? 'أحمد محمد' : (role === 'ADMIN' ? 'المدير' : (role === 'TEACHER' ? 'الأستاذ' : 'ولي الأمر')),
+          role: role
+        };
+
+        localStorage.setItem('token', mockUser.token);
+        setToken(mockUser.token);
+        setUser({
+          id: mockUser.userId.toString(),
+          username: mockUser.username,
+          fullName: mockUser.fullName,
+          role: mockUser.role as UserRole
+        });
+        addToast('تم تسجيل الدخول (تجريبي)', 'success');
+        setIsLoading(false);
+        return;
+      }
+      */
+
       const response = await api.post('/auth/login', credentials);
       // AuthResponse: { token, userId, username, fullName, role, message }
       const { token: newToken, userId, username, fullName, role } = response.data;

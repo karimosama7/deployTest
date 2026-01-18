@@ -10,7 +10,7 @@ export const AdminLayout: React.FC = () => {
         <div className="h-screen flex overflow-hidden bg-gray-100">
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <div className="flex flex-col w-0 flex-1 overflow-hidden md:mr-64">
+            <div className="flex flex-col w-0 flex-1 overflow-hidden md:mr-56">
                 <Navbar onMenuClick={() => setSidebarOpen(true)} />
 
                 <main className="flex-1 relative overflow-y-auto focus:outline-none">

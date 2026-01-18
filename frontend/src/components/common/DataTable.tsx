@@ -14,6 +14,7 @@ interface DataTableProps<T> {
     columns: Column<T>[];
     onEdit?: (item: T) => void;
     onDelete?: (item: T) => void;
+    actions?: (item: T) => React.ReactNode;
     isLoading?: boolean;
 }
 
@@ -22,6 +23,7 @@ export function DataTable<T extends { id: string | number }>({
     columns,
     onEdit,
     onDelete,
+    actions,
     isLoading,
 }: DataTableProps<T>) {
     if (isLoading) {
@@ -48,7 +50,7 @@ export function DataTable<T extends { id: string | number }>({
                                             {col.header}
                                         </th>
                                     ))}
-                                    {(onEdit || onDelete) && (
+                                    {(onEdit || onDelete || actions) && (
                                         <th scope="col" className="relative px-6 py-3">
                                             <span className="sr-only">Actions</span>
                                         </th>
@@ -71,7 +73,7 @@ export function DataTable<T extends { id: string | number }>({
                                                     : (item[col.accessor] as React.ReactNode)}
                                             </td>
                                         ))}
-                                        {(onEdit || onDelete) && (
+                                        {(onEdit || onDelete || actions) && (
                                             <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
                                                 {onEdit && (
                                                     <button
@@ -84,11 +86,12 @@ export function DataTable<T extends { id: string | number }>({
                                                 {onDelete && (
                                                     <button
                                                         onClick={() => onDelete(item)}
-                                                        className="text-red-600 hover:text-red-900"
+                                                        className="text-red-600 hover:text-red-900 ml-4"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </button>
                                                 )}
+                                                {actions && actions(item)}
                                             </td>
                                         )}
                                     </tr>

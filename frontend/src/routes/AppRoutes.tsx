@@ -7,9 +7,21 @@ import { AdminLayout } from '../components/layout/AdminLayout';
 import { StudentLayout } from '../components/layout/StudentLayout';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { StudentDashboard } from '../pages/student/StudentDashboard';
+import { ClassesPage } from '../pages/student/ClassesPage';
+import { HomeworkPage } from '../pages/student/HomeworkPage';
+import { ExamsPage } from '../pages/student/ExamsPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { CreateUserPage } from '../pages/admin/CreateUserPage';
+import { StudentReportPage } from '../pages/admin/StudentReportPage';
 import { GradesPage } from '../pages/admin/GradesPage';
+import { TeacherLayout } from '../components/layout/TeacherLayout';
+import { TeacherDashboard } from '../pages/teacher/TeacherDashboard';
+import { TeacherClassesPage } from '../pages/teacher/ClassesPage';
+import { TeacherHomeworkPage } from '../pages/teacher/HomeworkPage';
+import { TeacherExamsPage } from '../pages/teacher/ExamsPage';
+import { ParentLayout } from '../components/layout/ParentLayout';
+import { ParentDashboard } from '../pages/parent/ParentDashboard';
+import { ParentChildrenPage } from '../pages/parent/ParentChildrenPage';
 
 interface ProtectedRouteProps {
     allowedRoles?: UserRole[];
@@ -44,9 +56,9 @@ export const AppRoutes = () => {
             <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
                 <Route path="/student" element={<StudentLayout />}>
                     <Route index element={<StudentDashboard />} />
-                    <Route path="classes" element={<div>Classes Page (Coming Soon)</div>} />
-                    <Route path="homework" element={<div>Homework Page (Coming Soon)</div>} />
-                    <Route path="exams" element={<div>Exams Page (Coming Soon)</div>} />
+                    <Route path="classes" element={<ClassesPage />} />
+                    <Route path="homework" element={<HomeworkPage />} />
+                    <Route path="exams" element={<ExamsPage />} />
                 </Route>
             </Route>
 
@@ -56,9 +68,29 @@ export const AppRoutes = () => {
                     <Route index element={<AdminDashboard />} />
                     <Route path="users" element={<UsersPage />} />
                     <Route path="users/create" element={<CreateUserPage />} />
+                    <Route path="reports/student" element={<StudentReportPage />} />
                     <Route path="teachers" element={<UsersPage roleFilter="TEACHER" />} />
                     <Route path="students" element={<UsersPage roleFilter="STUDENT" />} />
                     <Route path="grades" element={<GradesPage />} />
+                </Route>
+            </Route>
+
+            {/* Teacher Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['TEACHER']} />}>
+                <Route path="/teacher" element={<TeacherLayout />}>
+                    <Route index element={<TeacherDashboard />} />
+                    <Route path="classes" element={<TeacherClassesPage />} />
+                    <Route path="homework" element={<TeacherHomeworkPage />} />
+                    <Route path="exams" element={<TeacherExamsPage />} />
+                </Route>
+            </Route>
+
+            {/* Parent Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['PARENT']} />}>
+                <Route path="/parent" element={<ParentLayout />}>
+                    <Route index element={<ParentDashboard />} />
+                    <Route path="children" element={<ParentChildrenPage />} />
+                    <Route path="reports" element={<div>Parent Reports Placeholder</div>} />
                 </Route>
             </Route>
 

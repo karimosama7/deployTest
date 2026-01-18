@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Video, FileText, BarChart2, Calendar, Star, Book } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -6,6 +7,7 @@ import { motion } from 'framer-motion';
 
 export const StudentDashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -56,9 +58,14 @@ export const StudentDashboard = () => {
             </div>
 
             {/* Quick Stats / Tabs Overview */}
+
+            {/* Quick Stats / Tabs Overview */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <motion.div variants={itemVariants} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-                    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow cursor-pointer group">
+                    <Card
+                        className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow cursor-pointer group"
+                        onClick={() => navigate('/student/classes')}
+                    >
                         <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-indigo-500 opacity-10 rounded-bl-full group-hover:opacity-20 transition-opacity"></div>
                         <div className="flex items-center p-4 relative z-10">
                             <div className="flex-shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 shadow-md text-white">
@@ -73,7 +80,10 @@ export const StudentDashboard = () => {
                 </motion.div>
 
                 <motion.div variants={itemVariants} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-                    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow cursor-pointer group">
+                    <Card
+                        className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow cursor-pointer group"
+                        onClick={() => navigate('/student/homework')}
+                    >
                         <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-emerald-400 to-green-500 opacity-10 rounded-bl-full group-hover:opacity-20 transition-opacity"></div>
                         <div className="flex items-center p-4 relative z-10">
                             <div className="flex-shrink-0 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-4 shadow-md text-white">
@@ -88,7 +98,10 @@ export const StudentDashboard = () => {
                 </motion.div>
 
                 <motion.div variants={itemVariants} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-                    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow cursor-pointer group">
+                    <Card
+                        className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow cursor-pointer group"
+                        onClick={() => navigate('/student/exams')}
+                    >
                         <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-500 opacity-10 rounded-bl-full group-hover:opacity-20 transition-opacity"></div>
                         <div className="flex items-center p-4 relative z-10">
                             <div className="flex-shrink-0 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-4 shadow-md text-white">
