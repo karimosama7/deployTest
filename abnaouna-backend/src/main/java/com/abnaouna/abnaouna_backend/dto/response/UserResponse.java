@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -25,4 +26,12 @@ public class UserResponse {
     
     // Generated credentials (only shown on creation)
     private String generatedPassword;
+    
+    // Teacher specific
+    private List<Long> subjectIds;
+    private List<Long> gradeIds;
+    
+    // Student specific
+    private Long gradeId;
 }
+

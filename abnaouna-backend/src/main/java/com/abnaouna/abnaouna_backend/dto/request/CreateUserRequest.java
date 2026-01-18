@@ -26,6 +26,7 @@ public class CreateUserRequest {
     
     // For Teacher
     private Long[] subjectIds;
+    private Long[] gradeIds;
     
     // For Student
     private Long gradeId;
@@ -34,3 +35,4 @@ public class CreateUserRequest {
     // For assigning children to parent
     private Long[] childrenIds;
 }
+

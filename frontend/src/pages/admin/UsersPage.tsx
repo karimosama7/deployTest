@@ -157,7 +157,19 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                         data={users}
                         columns={columns}
                         onEdit={(user) => navigate(`/admin/users/create?mode=edit&id=${user.id}&role=${user.role}`)}
-                        onDelete={(user) => console.log('Delete', user)}
+                        onDelete={async (user) => {
+                            if (window.confirm(`هل أنت متأكد من حذف المستخدم "${user.fullName}"؟ لا يمكن التراجع عن هذا الإجراء.`)) {
+                                try {
+                                    await api.delete(`/admin/users/${user.id}`);
+                                    addToast('تم حذف المستخدم بنجاح', 'success');
+                                    fetchUsers(); // Refresh list
+                                } catch (err: any) {
+                                    console.error(err);
+                                    const msg = err.response?.data?.message || 'حدث خطأ أثناء حذف المستخدم';
+                                    addToast(msg, 'error');
+                                }
+                            }
+                        }}
                         actions={(user) => (
                             <div className="flex items-center">
                                 {user.role === 'PARENT' && (

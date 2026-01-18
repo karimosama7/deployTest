@@ -158,6 +158,43 @@ public class AdminService {
         
         userRepository.save(user);
         
+        // Update role-specific data
+        if (user.getRole() == User.Role.TEACHER) {
+            Teacher teacher = teacherRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Teacher profile not found"));
+            
+            // Update subjects
+            if (request.getSubjectIds() != null) {
+                Set<Subject> subjects = new HashSet<>();
+                for (Long subjectId : request.getSubjectIds()) {
+                    Subject subject = subjectRepository.findById(subjectId)
+                            .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+                    subjects.add(subject);
+                }
+                teacher.setSubjects(subjects);
+            }
+            
+            // Update grades
+            if (request.getGradeIds() != null) {
+                Set<Grade> grades = new HashSet<>();
+                for (Long gradeId : request.getGradeIds()) {
+                    Grade grade = gradeRepository.findById(gradeId)
+                            .orElseThrow(() -> new RuntimeException("Grade not found: " + gradeId));
+                    grades.add(grade);
+                }
+                teacher.setGrades(grades);
+            }
+            
+            teacherRepository.save(teacher);
+        } else if (user.getRole() == User.Role.STUDENT && request.getGradeId() != null) {
+            Student student = studentRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Student profile not found"));
+            Grade grade = gradeRepository.findById(request.getGradeId())
+                    .orElseThrow(() -> new RuntimeException("Grade not found"));
+            student.setGrade(grade);
+            studentRepository.save(student);
+        }
+        
         return mapToUserResponse(user);
     }
 
@@ -210,7 +247,7 @@ public class AdminService {
     }
 
     private UserResponse mapToUserResponse(User user) {
-        return UserResponse.builder()
+        UserResponse.UserResponseBuilder builder = UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
@@ -218,8 +255,23 @@ public class AdminService {
                 .phone(user.getPhone())
                 .role(user.getRole())
                 .isActive(user.getIsActive())
-                .createdAt(user.getCreatedAt())
-                .build();
+                .createdAt(user.getCreatedAt());
+        
+        // Add role-specific data
+        if (user.getRole() == User.Role.TEACHER) {
+            teacherRepository.findByUserId(user.getId()).ifPresent(teacher -> {
+                builder.subjectIds(teacher.getSubjects().stream().map(Subject::getId).collect(Collectors.toList()));
+                builder.gradeIds(teacher.getGrades().stream().map(Grade::getId).collect(Collectors.toList()));
+            });
+        } else if (user.getRole() == User.Role.STUDENT) {
+            studentRepository.findByUserId(user.getId()).ifPresent(student -> {
+                if (student.getGrade() != null) {
+                    builder.gradeId(student.getGrade().getId());
+                }
+            });
+        }
+        
+        return builder.build();
     }
 
     private String generateUsername(String fullName) {

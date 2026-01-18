@@ -17,6 +17,14 @@ export const teacherService = {
         const response = await api.get('/teacher/classes');
         return response.data;
     },
+    getMySubjects: async (): Promise<any[]> => {
+        const response = await api.get('/teacher/my-subjects');
+        return response.data;
+    },
+    getMyGrades: async (): Promise<any[]> => {
+        const response = await api.get('/teacher/my-grades');
+        return response.data;
+    },
     getClassById: async (id: number): Promise<ClassSessionResponse> => {
         const response = await api.get(`/teacher/classes/${id}`);
         return response.data;

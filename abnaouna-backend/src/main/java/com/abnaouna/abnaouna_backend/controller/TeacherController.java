@@ -2,7 +2,9 @@ package com.abnaouna.abnaouna_backend.controller;
 
 import com.abnaouna.abnaouna_backend.dto.request.*;
 import com.abnaouna.abnaouna_backend.dto.response.*;
+import com.abnaouna.abnaouna_backend.entity.Grade;
 import com.abnaouna.abnaouna_backend.entity.Student;
+import com.abnaouna.abnaouna_backend.entity.Subject;
 import com.abnaouna.abnaouna_backend.entity.Teacher;
 import com.abnaouna.abnaouna_backend.entity.User;
 import com.abnaouna.abnaouna_backend.repository.TeacherRepository;
@@ -49,6 +51,24 @@ public class TeacherController {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long teacherId = getTeacherId(userDetails);
         return ResponseEntity.ok(classSessionService.getTeacherClasses(teacherId));
+    }
+
+    @GetMapping("/my-subjects")
+    public ResponseEntity<List<Subject>> getMySubjects(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long teacherId = getTeacherId(userDetails);
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+        return ResponseEntity.ok(List.copyOf(teacher.getSubjects()));
+    }
+
+    @GetMapping("/my-grades")
+    public ResponseEntity<List<Grade>> getMyGrades(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long teacherId = getTeacherId(userDetails);
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+        return ResponseEntity.ok(List.copyOf(teacher.getGrades()));
     }
 
     @GetMapping("/classes/{id}")

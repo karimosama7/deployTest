@@ -39,21 +39,27 @@ export const CreateUserPage = () => {
     // Load user data for edit mode
     React.useEffect(() => {
         if (isEditMode && editUserId) {
-            // In a real app, this would fetch from /api/users/${editUserId}
-            // For prototype, we'll simulate loading mock data based on ID/Role
-            console.log("Loading user for edit:", editUserId);
-            // Mock pre-fill
-            setFormData({
-                fullName: 'تعديل - ' + (role === 'STUDENT' ? 'أحمد محمد' : 'مستخدم'),
-                email: 'edit@example.com',
-                phone: '0123456789',
-                subjects: ['1', '2'],
-                grades: ['4', '5'],
-                grade: '6',
-                subscriptionType: 'PAID_YEARLY'
-            });
+            const fetchUser = async () => {
+                try {
+                    const response = await api.get(`/admin/users/${editUserId}`);
+                    const user = response.data;
+                    setRole(user.role as UserRole);
+                    setFormData({
+                        fullName: user.fullName || '',
+                        email: user.email || '',
+                        phone: user.phone || '',
+                        subjects: user.subjectIds?.map((id: number) => String(id)) || [],
+                        grades: user.gradeIds?.map((id: number) => String(id)) || [],
+                        grade: user.gradeId ? String(user.gradeId) : '',
+                        subscriptionType: user.subscriptionType || 'FREE',
+                    });
+                } catch (error) {
+                    console.error('Failed to fetch user for edit', error);
+                }
+            };
+            fetchUser();
         }
-    }, [isEditMode, editUserId, role]);
+    }, [isEditMode, editUserId]);
 
     // Result State (for modal)
     const [resultModalOpen, setResultModalOpen] = useState(false);
@@ -98,29 +104,40 @@ export const CreateUserPage = () => {
 
             if (role === 'TEACHER') {
                 payload.subjectIds = formData.subjects.map(s => Number(s));
+                payload.gradeIds = formData.grades.map(g => Number(g));
             } else if (role === 'STUDENT') {
                 payload.gradeId = Number(formData.grade);
             }
 
-            let endpoint = '/admin/users';
-            if (role === 'TEACHER') endpoint = '/admin/teachers';
-            else if (role === 'STUDENT') endpoint = '/admin/students';
-            else if (role === 'PARENT') endpoint = '/admin/parents';
+            let response;
+            
+            if (isEditMode && editUserId) {
+                // UPDATE existing user
+                response = await api.put(`/admin/users/${editUserId}`, payload);
+                addToast('تم تحديث بيانات المستخدم بنجاح', 'success');
+                navigate('/admin/users');
+            } else {
+                // CREATE new user
+                let endpoint = '/admin/users';
+                if (role === 'TEACHER') endpoint = '/admin/teachers';
+                else if (role === 'STUDENT') endpoint = '/admin/students';
+                else if (role === 'PARENT') endpoint = '/admin/parents';
 
-            const response = await api.post(endpoint, payload);
-            const data = response.data;
+                response = await api.post(endpoint, payload);
+                const data = response.data;
 
-            // Success
-            setCreatedUser({
-                username: data.username,
-                password: data.generatedPassword
-            });
-            setResultModalOpen(true);
-            addToast('تم إنشاء المستخدم بنجاح', 'success');
+                // Success - show credentials modal
+                setCreatedUser({
+                    username: data.username,
+                    password: data.generatedPassword
+                });
+                setResultModalOpen(true);
+                addToast('تم إنشاء المستخدم بنجاح', 'success');
+            }
 
         } catch (error: any) {
-            console.error("Failed to create user", error);
-            const msg = error.response?.data?.message || 'فشل إنشاء المستخدم. تأكد من البيانات.';
+            console.error("Failed to save user", error);
+            const msg = error.response?.data?.message || (isEditMode ? 'فشل تحديث المستخدم' : 'فشل إنشاء المستخدم. تأكد من البيانات.');
             addToast(msg, 'error');
         } finally {
             setIsLoading(false);

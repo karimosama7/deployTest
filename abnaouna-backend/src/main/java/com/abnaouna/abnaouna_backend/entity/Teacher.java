@@ -32,4 +32,14 @@ public class Teacher {
     )
     @Builder.Default
     private Set<Subject> subjects = new HashSet<>(); // Max 2 subjects (enforce in service)
+
+    @ManyToMany
+    @JoinTable(
+        name = "teacher_grades",
+        joinColumns = @JoinColumn(name = "teacher_id"),
+        inverseJoinColumns = @JoinColumn(name = "grade_id")
+    )
+    @Builder.Default
+    private Set<Grade> grades = new HashSet<>(); // Assigned grades
 }
+

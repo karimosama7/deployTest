@@ -7,13 +7,12 @@ import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { ClassSessionResponse, Grade, Subject } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
-import { commonService } from '../../services/commonService';
 import { useToast } from '../../context/ToastContext';
 
 export const TeacherClassesPage = () => {
     const [classes, setClasses] = useState<ClassSessionResponse[]>([]);
     const [grades, setGrades] = useState<Grade[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]); // Teacher's assigned subjects only
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,12 +20,10 @@ export const TeacherClassesPage = () => {
 
     // Form State
     const [formData, setFormData] = useState({
-        title: '',
         gradeId: '',
         subjectId: '',
         date: '',
         time: '',
-        description: '',
         teamsMeetingUrl: ''
     });
 
@@ -38,8 +35,8 @@ export const TeacherClassesPage = () => {
         try {
             const [classesData, gradesData, subjectsData] = await Promise.all([
                 teacherService.getClasses(),
-                commonService.getGrades(),
-                commonService.getSubjects()
+                teacherService.getMyGrades(),   // Only teacher's assigned grades
+                teacherService.getMySubjects()  // Only teacher's assigned subjects
             ]);
             setClasses(classesData);
             setGrades(gradesData);
@@ -73,18 +70,22 @@ export const TeacherClassesPage = () => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            // Auto-generate title from grade + subject + date
+            const selectedGrade = grades.find(g => g.id === parseInt(formData.gradeId));
+            const selectedSubject = subjects.find(s => s.id === parseInt(formData.subjectId));
+            const autoTitle = `${selectedSubject?.nameAr || selectedSubject?.name || 'حصة'} - ${selectedGrade?.name || ''} - ${formData.date}`;
+            
             await teacherService.createClass({
-                title: formData.title,
+                title: autoTitle,
                 gradeId: parseInt(formData.gradeId),
                 subjectId: parseInt(formData.subjectId),
                 scheduledTime: `${formData.date}T${formData.time}:00`,
-                description: formData.description || undefined,
                 teamsMeetingUrl: formData.teamsMeetingUrl || undefined
             });
             addToast('تم إنشاء الحصة بنجاح', 'success');
             loadData();
             setIsCreateModalOpen(false);
-            setFormData({ title: '', gradeId: '', subjectId: '', date: '', time: '', description: '', teamsMeetingUrl: '' });
+            setFormData({ gradeId: '', subjectId: '', date: '', time: '', teamsMeetingUrl: '' });
         } catch (error) {
             console.error('Failed to create class', error);
             addToast('فشل إنشاء الحصة', 'error');
@@ -237,15 +238,6 @@ export const TeacherClassesPage = () => {
                 title="جدولة حصة جديدة"
             >
                 <form onSubmit={handleCreateClass} className="space-y-4">
-                    <Input
-                        label="عنوان الحصة"
-                        name="title"
-                        placeholder="مثال: الفصل الأول - الكسور"
-                        required
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    />
-
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">الصف الدراسي</label>
@@ -303,17 +295,6 @@ export const TeacherClassesPage = () => {
                         value={formData.teamsMeetingUrl}
                         onChange={(e) => setFormData({ ...formData, teamsMeetingUrl: e.target.value })}
                     />
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">وصف الحصة (اختياري)</label>
-                        <textarea
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            rows={3}
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="وصف مختصر للحصة..."
-                        />
-                    </div>
 
                     <div className="flex justify-end gap-3 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
