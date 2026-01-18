@@ -7,6 +7,7 @@ import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { HomeworkResponse, ClassSessionResponse } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
+import { useToast } from '../../context/ToastContext';
 
 export const TeacherHomeworkPage = () => {
     const [homeworkList, setHomeworkList] = useState<HomeworkResponse[]>([]);
@@ -14,6 +15,7 @@ export const TeacherHomeworkPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { addToast } = useToast();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -76,6 +78,7 @@ export const TeacherHomeworkPage = () => {
                 homeworkUrl: formData.pdfLink,
             });
             // Reload to refresh list
+            addToast('تم إنشاء الواجب بنجاح', 'success');
             loadHomeworks();
             setIsCreateModalOpen(false);
             setFormData({ title: '', grade: '', dueDate: '', time: '', pdfLink: '' });
@@ -128,7 +131,7 @@ export const TeacherHomeworkPage = () => {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-bold text-gray-900">{hw.title}</h3>
-                                                    <p className="text-gray-500 text-sm mt-1">{hw.classSessionId}</p>
+                                                    <p className="text-gray-500 text-sm mt-1">{hw.subjectName} - {hw.classTitle}</p>
                                                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                                                         <div className="flex items-center gap-1">
                                                             <Calendar className="w-4 h-4" />
@@ -154,12 +157,12 @@ export const TeacherHomeworkPage = () => {
                                                 <div className="w-full">
                                                     <div className="flex justify-between text-sm mb-1">
                                                         <span className="text-gray-600">تم التسليم</span>
-                                                        <span className="font-bold text-gray-900">{hw.submissionCount}</span>
+                                                        <span className="font-bold text-gray-900">{hw.totalSubmissions} ({hw.gradedSubmissions} مُصحح)</span>
                                                     </div>
                                                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                                                         <div
                                                             className={`h-2.5 rounded-full bg-green-600`}
-                                                            style={{ width: `${(hw.submissionCount / 30) * 100}%` }}
+                                                            style={{ width: `${hw.totalSubmissions > 0 ? (hw.gradedSubmissions / hw.totalSubmissions) * 100 : 0}%` }}
                                                         ></div>
                                                     </div>
                                                 </div>

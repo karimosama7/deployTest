@@ -3,6 +3,8 @@ package com.abnaouna.abnaouna_backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "classes")
@@ -50,6 +52,19 @@ public class ClassSession {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // Cascade delete relationships
+    @OneToMany(mappedBy = "classSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Exam> exams = new ArrayList<>();
+
+    @OneToMany(mappedBy = "classSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Homework> homeworkList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "classSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Attendance> attendanceRecords = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -59,3 +74,4 @@ public class ClassSession {
         SCHEDULED, LIVE, COMPLETED
     }
 }
+

@@ -7,6 +7,7 @@ import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { ExamResponse, ClassSessionResponse } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
+import { useToast } from '../../context/ToastContext';
 
 export const TeacherExamsPage = () => {
     const [examsList, setExamsList] = useState<ExamResponse[]>([]);
@@ -14,6 +15,7 @@ export const TeacherExamsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { addToast } = useToast();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -75,6 +77,7 @@ export const TeacherExamsPage = () => {
                 formUrl: formData.formLink
             });
             // Reload to refresh list
+            addToast('تم إنشاء الاختبار بنجاح', 'success');
             loadExams();
             setIsCreateModalOpen(false);
             setFormData({ title: '', grade: '', date: '', duration: '45', formLink: '' });
@@ -117,17 +120,19 @@ export const TeacherExamsPage = () => {
                                 لا توجد اختبارات حالياً.
                             </div>
                         ) : (
-                            examsList.map((exam) => (
+                            examsList.map((exam) => {
+                                const isUpcoming = new Date(exam.examDate) > new Date();
+                                return (
                                 <motion.div key={exam.id} variants={itemVariants} layout>
-                                    <Card className={`border-l-4 ${exam.status === 'UPCOMING' ? 'border-l-indigo-500' : 'border-l-gray-400'} hover:shadow-md transition-shadow`}>
+                                    <Card className={`border-l-4 ${isUpcoming ? 'border-l-indigo-500' : 'border-l-gray-400'} hover:shadow-md transition-shadow`}>
                                         <div className="flex flex-col md:flex-row justify-between gap-6">
                                             <div className="flex gap-4">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${exam.status === 'UPCOMING' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'}`}>
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isUpcoming ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'}`}>
                                                     <FileText className="w-6 h-6" />
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-bold text-gray-900">{exam.title}</h3>
-                                                    <p className="text-gray-500 text-sm mt-1">{exam.classSessionId}</p>
+                                                    <p className="text-gray-500 text-sm mt-1">{exam.subjectName} - {exam.classTitle}</p>
                                                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                                                         <div className="flex items-center gap-1">
                                                             <Calendar className="w-4 h-4" />
@@ -143,7 +148,7 @@ export const TeacherExamsPage = () => {
 
                                             <div className="flex flex-col items-end gap-3 min-w-[200px]">
                                                 <div className="flex items-center gap-2">
-                                                    {exam.status === 'UPCOMING' ? (
+                                                    {isUpcoming ? (
                                                         <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-bold flex items-center gap-1">
                                                             <AlertTriangle className="w-3 h-3" />
                                                             قادم
@@ -175,7 +180,8 @@ export const TeacherExamsPage = () => {
                                         </div>
                                     </Card>
                                 </motion.div>
-                            ))
+                            );
+                            })
                         )}
                     </AnimatePresence>
                 </div>

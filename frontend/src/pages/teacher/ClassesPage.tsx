@@ -1,38 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Calendar, Clock, Plus, Users, MoreVertical, CheckCircle } from 'lucide-react';
+import { Video, Calendar, Clock, Plus, Users, CheckCircle, Trash2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
-import { ClassSessionResponse } from '../../types/api';
+import { ClassSessionResponse, Grade, Subject } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
+import { commonService } from '../../services/commonService';
+import { useToast } from '../../context/ToastContext';
 
 export const TeacherClassesPage = () => {
     const [classes, setClasses] = useState<ClassSessionResponse[]>([]);
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { addToast } = useToast();
 
     // Form State
     const [formData, setFormData] = useState({
-        grade: '',
+        title: '',
+        gradeId: '',
+        subjectId: '',
         date: '',
         time: '',
-        duration: '45',
-        link: ''
+        description: '',
+        teamsMeetingUrl: ''
     });
 
     useEffect(() => {
-        loadClasses();
+        loadData();
     }, []);
 
-    const loadClasses = async () => {
+    const loadData = async () => {
         try {
-            const data = await teacherService.getClasses();
-            setClasses(data);
+            const [classesData, gradesData, subjectsData] = await Promise.all([
+                teacherService.getClasses(),
+                commonService.getGrades(),
+                commonService.getSubjects()
+            ]);
+            setClasses(classesData);
+            setGrades(gradesData);
+            setSubjects(subjectsData);
         } catch (error) {
-            console.error('Failed to load classes', error);
+            console.error('Failed to load data', error);
+            addToast('فشل تحميل البيانات', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -60,21 +74,52 @@ export const TeacherClassesPage = () => {
         setIsSubmitting(true);
         try {
             await teacherService.createClass({
-                title: 'حصة رياضيات', // TODO: Add title to form or derive
-                gradeId: 1, // TODO: Map grade to ID
-                subjectId: 1, // TODO: Get from auth/context
+                title: formData.title,
+                gradeId: parseInt(formData.gradeId),
+                subjectId: parseInt(formData.subjectId),
                 scheduledTime: `${formData.date}T${formData.time}:00`,
-                description: '',
-                teamsMeetingUrl: formData.link
+                description: formData.description || undefined,
+                teamsMeetingUrl: formData.teamsMeetingUrl || undefined
             });
-            // Reload classes to get full data
-            loadClasses();
+            addToast('تم إنشاء الحصة بنجاح', 'success');
+            loadData();
             setIsCreateModalOpen(false);
-            setFormData({ grade: '', date: '', time: '', duration: '45', link: '' });
+            setFormData({ title: '', gradeId: '', subjectId: '', date: '', time: '', description: '', teamsMeetingUrl: '' });
         } catch (error) {
             console.error('Failed to create class', error);
+            addToast('فشل إنشاء الحصة', 'error');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteClass = async (classId: number) => {
+        if (!window.confirm('هل أنت متأكد من حذف هذه الحصة؟')) return;
+        try {
+            await teacherService.deleteClass(classId);
+            addToast('تم حذف الحصة', 'success');
+            loadData();
+        } catch (error) {
+            console.error('Failed to delete class', error);
+            addToast('فشل حذف الحصة', 'error');
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'SCHEDULED': return 'bg-blue-100 text-blue-800';
+            case 'LIVE': return 'bg-green-100 text-green-800';
+            case 'COMPLETED': return 'bg-gray-100 text-gray-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'SCHEDULED': return 'مجدولة';
+            case 'LIVE': return 'مباشر';
+            case 'COMPLETED': return 'منتهية';
+            default: return status;
         }
     };
 
@@ -108,15 +153,21 @@ export const TeacherClassesPage = () => {
                     <AnimatePresence>
                         {classes.length === 0 ? (
                             <div className="col-span-full text-center py-12 text-gray-500">
-                                لا توجد حصص مجدولة حالياً.
+                                لا توجد حصص مجدولة حالياً. قم بإنشاء حصة جديدة!
                             </div>
                         ) : (
                             classes.map((cls) => (
                                 <motion.div key={cls.id} variants={itemVariants} layout>
                                     <Card className="hover:shadow-md transition-shadow relative">
-                                        <div className="absolute top-4 left-4">
-                                            <button className="text-gray-400 hover:text-gray-600">
-                                                <MoreVertical className="w-5 h-5" />
+                                        <div className="absolute top-4 left-4 flex gap-2">
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(cls.status)}`}>
+                                                {getStatusText(cls.status)}
+                                            </span>
+                                            <button 
+                                                onClick={() => handleDeleteClass(cls.id)}
+                                                className="text-red-400 hover:text-red-600"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
 
@@ -125,8 +176,8 @@ export const TeacherClassesPage = () => {
                                                 <Video className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-gray-900">{cls.subjectName}</h3>
-                                                <p className="text-sm text-gray-500">{cls.gradeName}</p>
+                                                <h3 className="font-bold text-gray-900">{cls.title}</h3>
+                                                <p className="text-sm text-gray-500">{cls.subjectName} - {cls.gradeName}</p>
                                             </div>
                                         </div>
 
@@ -141,22 +192,35 @@ export const TeacherClassesPage = () => {
                                             </div>
                                             <div className="flex items-center gap-2 text-gray-600 text-sm">
                                                 <Users className="w-4 h-4" />
-                                                <span>0 طالب</span>
+                                                <span>{cls.teacherName}</span>
                                             </div>
                                         </div>
 
                                         <div className="border-t border-gray-100 pt-4 flex gap-2">
-                                            <a
-                                                href={cls.teamsMeetingUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex-1 bg-indigo-50 text-indigo-700 text-center py-2 rounded-lg font-bold text-sm hover:bg-indigo-100 transition-colors"
-                                            >
-                                                انضمام
-                                            </a>
-                                            <button className="flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition-colors">
-                                                التفاصيل
-                                            </button>
+                                            {cls.teamsMeetingUrl ? (
+                                                <a
+                                                    href={cls.teamsMeetingUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex-1 bg-indigo-50 text-indigo-700 text-center py-2 rounded-lg font-bold text-sm hover:bg-indigo-100 transition-colors"
+                                                >
+                                                    انضمام
+                                                </a>
+                                            ) : (
+                                                <span className="flex-1 bg-gray-50 text-gray-400 text-center py-2 rounded-lg text-sm">
+                                                    لا يوجد رابط
+                                                </span>
+                                            )}
+                                            {cls.teamsRecordingUrl && (
+                                                <a
+                                                    href={cls.teamsRecordingUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex-1 bg-gray-50 text-gray-700 text-center py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition-colors"
+                                                >
+                                                    التسجيل
+                                                </a>
+                                            )}
                                         </div>
                                     </Card>
                                 </motion.div>
@@ -173,22 +237,44 @@ export const TeacherClassesPage = () => {
                 title="جدولة حصة جديدة"
             >
                 <form onSubmit={handleCreateClass} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">الصف الدراسي</label>
-                        <select
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            value={formData.grade}
-                            onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                            required
-                        >
-                            <option value="">اختر الصف...</option>
-                            <option value="الصف الأول">الصف الأول</option>
-                            <option value="الصف الثاني">الصف الثاني</option>
-                            <option value="الصف الثالث">الصف الثالث</option>
-                            <option value="الصف الرابع">الصف الرابع</option>
-                            <option value="الصف الخامس">الصف الخامس</option>
-                            <option value="الصف السادس">الصف السادس</option>
-                        </select>
+                    <Input
+                        label="عنوان الحصة"
+                        name="title"
+                        placeholder="مثال: الفصل الأول - الكسور"
+                        required
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">الصف الدراسي</label>
+                            <select
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={formData.gradeId}
+                                onChange={(e) => setFormData({ ...formData, gradeId: e.target.value })}
+                                required
+                            >
+                                <option value="">اختر الصف...</option>
+                                {grades.map((grade) => (
+                                    <option key={grade.id} value={grade.id}>{grade.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">المادة</label>
+                            <select
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={formData.subjectId}
+                                onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                                required
+                            >
+                                <option value="">اختر المادة...</option>
+                                {subjects.map((subject) => (
+                                    <option key={subject.id} value={subject.id}>{subject.nameAr || subject.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -210,28 +296,24 @@ export const TeacherClassesPage = () => {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">المدة (دقيقة)</label>
-                        <select
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            value={formData.duration}
-                            onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                        >
-                            <option value="30">30 دقيقة</option>
-                            <option value="45">45 دقيقة</option>
-                            <option value="60">60 دقيقة (ساعة)</option>
-                            <option value="90">90 دقيقة</option>
-                        </select>
-                    </div>
-
                     <Input
                         label="رابط الاجتماع (Microsoft Teams)"
-                        name="link"
+                        name="teamsMeetingUrl"
                         placeholder="https://teams.microsoft.com/..."
-                        required
-                        value={formData.link}
-                        onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                        value={formData.teamsMeetingUrl}
+                        onChange={(e) => setFormData({ ...formData, teamsMeetingUrl: e.target.value })}
                     />
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">وصف الحصة (اختياري)</label>
+                        <textarea
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            rows={3}
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="وصف مختصر للحصة..."
+                        />
+                    </div>
 
                     <div className="flex justify-end gap-3 mt-6">
                         <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>

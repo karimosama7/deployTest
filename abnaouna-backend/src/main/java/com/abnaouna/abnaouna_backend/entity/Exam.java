@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "exams")
@@ -33,8 +35,14 @@ public class Exam {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // Cascade delete for exam results
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExamResult> results = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 }
+
