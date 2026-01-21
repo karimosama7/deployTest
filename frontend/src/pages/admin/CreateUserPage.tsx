@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import { Select } from '../../components/common/Select';
 import { MultiSelect } from '../../components/common/MultiSelect';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
+import { SearchableMultiSelect } from '../../components/common/SearchableMultiSelect';
 import { Modal } from '../../components/common/Modal';
 import { UserRole } from '../../context/AuthContext';
 import { ArrowRight, Copy, Check, UserPlus } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
+import { adminService } from '../../services/adminService';
 
 export const CreateUserPage = () => {
     const navigate = useNavigate();
@@ -32,12 +35,36 @@ export const CreateUserPage = () => {
         // Student specific
         grade: '',
         subscriptionType: 'FREE',
+        parentId: '', // Parent for student
+        // Parent specific
+        childrenIds: [] as string[], // Children for parent
     });
 
     const [isLoading, setIsLoading] = useState(false);
+    
+    // Parents and Students lists for dropdowns
+    const [parentsList, setParentsList] = useState<{ value: string; label: string }[]>([]);
+    const [studentsList, setStudentsList] = useState<{ value: string; label: string }[]>([]);
+
+    // Fetch parents and students lists
+    useEffect(() => {
+        const fetchLists = async () => {
+            try {
+                const [parents, students] = await Promise.all([
+                    adminService.getParents(),
+                    adminService.getStudents()
+                ]);
+                setParentsList(parents.map(p => ({ value: String(p.id), label: p.fullName })));
+                setStudentsList(students.map(s => ({ value: String(s.id), label: s.fullName })));
+            } catch (error) {
+                console.error('Failed to fetch lists', error);
+            }
+        };
+        fetchLists();
+    }, []);
 
     // Load user data for edit mode
-    React.useEffect(() => {
+    useEffect(() => {
         if (isEditMode && editUserId) {
             const fetchUser = async () => {
                 try {
@@ -52,6 +79,8 @@ export const CreateUserPage = () => {
                         grades: user.gradeIds?.map((id: number) => String(id)) || [],
                         grade: user.gradeId ? String(user.gradeId) : '',
                         subscriptionType: user.subscriptionType || 'FREE',
+                        parentId: user.parentId ? String(user.parentId) : '',
+                        childrenIds: user.childrenIds?.map((id: number) => String(id)) || [],
                     });
                 } catch (error) {
                     console.error('Failed to fetch user for edit', error);
@@ -106,7 +135,12 @@ export const CreateUserPage = () => {
                 payload.subjectIds = formData.subjects.map(s => Number(s));
                 payload.gradeIds = formData.grades.map(g => Number(g));
             } else if (role === 'STUDENT') {
-                payload.gradeId = Number(formData.grade);
+                payload.gradeId = formData.grade ? Number(formData.grade) : null;
+                if (formData.parentId) {
+                    payload.parentId = Number(formData.parentId);
+                }
+            } else if (role === 'PARENT') {
+                payload.childrenIds = formData.childrenIds.map(id => Number(id));
             }
 
             let response;
@@ -243,10 +277,9 @@ export const CreateUserPage = () => {
                         </div>
 
                         <Input
-                            label="البريد الإلكتروني"
+                            label="البريد الإلكتروني (اختياري)"
                             id="email"
                             type="email"
-                            required
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
@@ -320,17 +353,43 @@ export const CreateUserPage = () => {
                                     value={formData.subscriptionType}
                                     onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value })}
                                 />
+                                <div className="col-span-2 sm:col-span-1">
+                                    <SearchableSelect
+                                        label="ولي الأمر (اختياري)"
+                                        options={[{ value: '', label: '-- بدون ولي أمر --' }, ...parentsList]}
+                                        value={formData.parentId}
+                                        onChange={(val) => setFormData({ ...formData, parentId: val })}
+                                        placeholder="ابحث عن ولي أمر..."
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">يمكنك ربط الطالب بولي أمر موجود في النظام</p>
+                                </div>
                             </motion.div>
                         )}
 
                         {/* Parent Specific Fields */}
                         {role === 'PARENT' && (
-                            <div className="col-span-2 border-t pt-4 mt-2 bg-blue-50 p-4 rounded-lg">
-                                <p className="text-sm text-blue-700 flex items-center gap-2">
-                                    <span className="font-bold">ملاحظة:</span>
-                                    يمكنك ربط الأبناء بولي الأمر من صفحة "الطلاب" أو صفحة "أولياء الأمور" بعد إنشاء الحساب.
-                                </p>
-                            </div>
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="col-span-2 grid grid-cols-1 gap-6 border-t pt-6 mt-2"
+                            >
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                        <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+                                        بيانات ولي الأمر
+                                    </h4>
+                                </div>
+                                <div>
+                                    <SearchableMultiSelect
+                                        label="الأبناء (اختياري)"
+                                        options={studentsList}
+                                        value={formData.childrenIds}
+                                        onChange={(val) => setFormData({ ...formData, childrenIds: val })}
+                                        placeholder="ابحث عن طالب..."
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">يمكنك ربط أبناء موجودين في النظام بولي الأمر</p>
+                                </div>
+                            </motion.div>
                         )}
 
                     </div>

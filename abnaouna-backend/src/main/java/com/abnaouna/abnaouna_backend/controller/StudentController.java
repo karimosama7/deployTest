@@ -1,12 +1,13 @@
 package com.abnaouna.abnaouna_backend.controller;
 
 import com.abnaouna.abnaouna_backend.dto.request.HomeworkSubmissionRequest;
-import com.abnaouna.abnaouna_backend.dto.response.HomeworkSubmissionResponse;
+import com.abnaouna.abnaouna_backend.dto.response.*;
 import com.abnaouna.abnaouna_backend.entity.Student;
 import com.abnaouna.abnaouna_backend.entity.User;
 import com.abnaouna.abnaouna_backend.repository.StudentRepository;
 import com.abnaouna.abnaouna_backend.repository.UserRepository;
 import com.abnaouna.abnaouna_backend.service.HomeworkService;
+import com.abnaouna.abnaouna_backend.service.StudentDataService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/student")
 @RequiredArgsConstructor
 public class StudentController {
 
     private final HomeworkService homeworkService;
+    private final StudentDataService studentDataService;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
 
@@ -32,7 +36,23 @@ public class StudentController {
         return student.getId();
     }
 
-    // ==================== Homework Submission ====================
+    // ==================== Schedule ====================
+
+    @GetMapping("/schedule")
+    public ResponseEntity<List<StudentScheduleResponse>> getSchedule(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(studentDataService.getSchedule(studentId));
+    }
+
+    // ==================== Homework ====================
+
+    @GetMapping("/homework")
+    public ResponseEntity<List<StudentHomeworkResponse>> getHomework(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(studentDataService.getHomework(studentId));
+    }
 
     @PostMapping("/homework/{homeworkId}/submit")
     public ResponseEntity<HomeworkSubmissionResponse> submitHomework(
@@ -42,4 +62,30 @@ public class StudentController {
         Long studentId = getStudentId(userDetails);
         return ResponseEntity.ok(homeworkService.submitHomework(studentId, homeworkId, request.getSolutionUrl()));
     }
+
+    // ==================== Exams ====================
+
+    @GetMapping("/exams")
+    public ResponseEntity<List<StudentExamResponse>> getExams(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(studentDataService.getExams(studentId));
+    }
+
+    // ==================== Attendance ====================
+
+    @GetMapping("/attendance")
+    public ResponseEntity<List<StudentAttendanceResponse>> getAttendance(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(studentDataService.getAttendance(studentId));
+    }
+
+    @GetMapping("/attendance/summary")
+    public ResponseEntity<AttendanceSummary> getAttendanceSummary(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(studentDataService.getAttendanceSummary(studentId));
+    }
 }
+

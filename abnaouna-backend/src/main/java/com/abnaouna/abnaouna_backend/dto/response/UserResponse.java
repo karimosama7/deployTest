@@ -33,5 +33,9 @@ public class UserResponse {
     
     // Student specific
     private Long gradeId;
+    private Long parentId;
+    
+    // Parent specific
+    private List<Long> childrenIds;
 }
 

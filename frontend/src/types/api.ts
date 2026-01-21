@@ -151,6 +151,14 @@ export interface UserResponse {
     isActive: boolean;
     createdAt: string;
     generatedPassword?: string;
+    // Teacher specific
+    subjectIds?: number[];
+    gradeIds?: number[];
+    // Student specific
+    gradeId?: number;
+    parentId?: number;
+    // Parent specific
+    childrenIds?: number[];
 }
 
 export interface CreateUserRequest {
@@ -159,7 +167,82 @@ export interface CreateUserRequest {
     phone?: string;
     role?: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
     subjectIds?: number[]; // For Teacher
+    gradeIds?: number[];   // For Teacher
     gradeId?: number; // For Student
     parentId?: number; // For Student
     childrenIds?: number[]; // For Parent
 }
+
+// ==================== Student Dashboard ====================
+
+export interface StudentScheduleResponse {
+    id: number;
+    title: string;
+    subjectName?: string;
+    teacherName?: string;
+    scheduledTime: string;
+    status: string;
+    teamsMeetingUrl?: string;
+    teamsRecordingUrl?: string;
+}
+
+export interface StudentHomeworkResponse {
+    id: number;
+    title: string;
+    description?: string;
+    subjectName?: string;
+    dueDate: string;
+    homeworkUrl?: string;
+    isSubmitted: boolean;
+    submissionStatus: string;
+    grade?: number;
+    feedback?: string;
+}
+
+export interface StudentExamResponse {
+    id: number;
+    title: string;
+    subjectName?: string;
+    examDate: string;
+    formUrl?: string;
+    status: string;
+    grade?: number;
+}
+
+export interface StudentAttendanceResponse {
+    classId: number;
+    classTitle: string;
+    subjectName?: string;
+    scheduledTime: string;
+    attended: boolean;
+    markedAt?: string;
+}
+
+export interface AttendanceSummary {
+    totalClasses: number;
+    attendedClasses: number;
+    attendanceRate: number;
+}
+
+// ==================== Parent Dashboard ====================
+
+export interface ChildResponse {
+    id: number;
+    fullName: string;
+    gradeName?: string;
+    attendanceRate: number;
+}
+
+// ==================== Admin Enhancements ====================
+
+export interface StudentReportResponse {
+    studentId: number;
+    fullName?: string;
+    gradeName?: string;
+    parentName?: string;
+}
+
+export interface AssignChildrenRequest {
+    childIds: number[];
+}
+

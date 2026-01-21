@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
-import { Plus, UserPlus } from 'lucide-react';
+import { Plus, UserPlus, Power, PowerOff, GraduationCap } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
+import { adminService } from '../../services/adminService';
+import { Grade, UserResponse } from '../../types/api';
+import { SearchableMultiSelect } from '../../components/common/SearchableMultiSelect';
 
 // User Interface based on backend response
 interface UserData {
@@ -16,6 +19,7 @@ interface UserData {
     email: string;
     role: UserRole;
     isActive: boolean;
+    gradeId?: number; // For students
 }
 
 interface UsersPageProps {
@@ -26,6 +30,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [users, setUsers] = useState<UserData[]>([]);
+    const [grades, setGrades] = useState<Grade[]>([]);
     const [loading, setLoading] = useState(true);
 
     const getTitle = () => {
@@ -44,6 +49,13 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
             case 'PARENT': return 'قائمة بجميع أولياء الأمور في النظام.';
             default: return 'قائمة بجميع المستخدمين في النظام.';
         }
+    };
+
+    // Get grade name by ID
+    const getGradeName = (gradeId?: number): string => {
+        if (!gradeId) return '—';
+        const grade = grades.find(g => g.id === gradeId);
+        return grade?.name || '—';
     };
 
     const fetchUsers = async () => {
@@ -67,55 +79,142 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
         }
     };
 
+    const fetchGrades = async () => {
+        try {
+            const gradesData = await adminService.getGrades();
+            setGrades(gradesData);
+        } catch (error) {
+            console.error("Failed to fetch grades", error);
+        }
+    };
 
     useEffect(() => {
         fetchUsers();
+        // Fetch grades for students list or parent's link modal
+        if (roleFilter === 'STUDENT' || roleFilter === 'PARENT' || !roleFilter) {
+            fetchGrades();
+        }
     }, [roleFilter]);
 
     // Link Children State
     const [linkModalOpen, setLinkModalOpen] = useState(false);
     const [selectedParent, setSelectedParent] = useState<UserData | null>(null);
     const [selectedChildren, setSelectedChildren] = useState<string[]>([]);
+    const [allStudents, setAllStudents] = useState<UserResponse[]>([]);
+    const [loadingStudents, setLoadingStudents] = useState(false);
+    const [savingLink, setSavingLink] = useState(false);
 
-    const handleLinkChild = (parent: UserData) => {
+    const handleLinkChild = async (parent: UserData) => {
         setSelectedParent(parent);
-        setSelectedChildren([]); // Reset or fetch existing links
+        setSelectedChildren([]); // Reset selection
         setLinkModalOpen(true);
+        
+        // Fetch all students for selection
+        setLoadingStudents(true);
+        try {
+            const students = await adminService.getStudents();
+            setAllStudents(students);
+        } catch (error) {
+            console.error('Failed to fetch students', error);
+            addToast('فشل تحميل قائمة الطلاب', 'error');
+        } finally {
+            setLoadingStudents(false);
+        }
     };
 
-    const submitLinkChildren = () => {
-        // API Call would go here: api.post(`/admin/parents/${selectedParent.id}/children`, { childIds: selectedChildren })
-        addToast('تم ربط الأبناء بنجاح', 'success');
-        setLinkModalOpen(false);
+    const submitLinkChildren = async () => {
+        if (!selectedParent || selectedChildren.length === 0) {
+            addToast('الرجاء اختيار طالب واحد على الأقل', 'error');
+            return;
+        }
+        
+        setSavingLink(true);
+        try {
+            await adminService.assignChildrenToParent(
+                Number(selectedParent.id),
+                selectedChildren.map(id => Number(id))
+            );
+            addToast('تم ربط الأبناء بنجاح', 'success');
+            setLinkModalOpen(false);
+            fetchUsers(); // Refresh the list
+        } catch (error: any) {
+            console.error('Failed to link children', error);
+            const msg = error.response?.data?.message || 'حدث خطأ أثناء ربط الأبناء';
+            addToast(msg, 'error');
+        } finally {
+            setSavingLink(false);
+        }
     };
 
-    const columns = [
-        { header: 'الاسم', accessor: 'fullName' as const },
-        { header: 'البريد الإلكتروني', accessor: 'email' as const },
-        {
-            header: 'الصلاحية',
-            accessor: (item: UserData) => (
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                ${item.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                        item.role === 'TEACHER' ? 'bg-blue-100 text-blue-800' :
-                            item.role === 'STUDENT' ? 'bg-green-100 text-green-800' :
-                                'bg-purple-100 text-purple-800'}`
-                }>
-                    {item.role === 'ADMIN' ? 'مدير' :
-                        item.role === 'TEACHER' ? 'معلم' :
-                            item.role === 'STUDENT' ? 'طالب' : 'ولي أمر'}
-                </span>
-            )
-        },
-        {
+    // Toggle activation handler
+    const handleToggleActivation = async (user: UserData) => {
+        if (window.confirm(`هل أنت متأكد من ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} هذا المستخدم؟`)) {
+            try {
+                await api.put(`/admin/users/${user.id}/activate?active=${!user.isActive}`);
+                addToast(`تم ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} المستخدم بنجاح`, 'success');
+                fetchUsers(); // Refresh list
+            } catch (err) {
+                console.error(err);
+                addToast('حدث خطأ أثناء تغيير حالة المستخدم', 'error');
+            }
+        }
+    };
+
+    // Build columns dynamically based on role filter
+    const getColumns = () => {
+        const baseColumns = [
+            { header: 'الاسم', accessor: 'fullName' as const },
+            { header: 'البريد الإلكتروني', accessor: 'email' as const },
+        ];
+
+        // Add grade column for students
+        if (roleFilter === 'STUDENT') {
+            baseColumns.push({
+                header: 'الصف الدراسي',
+                accessor: ((item: UserData) => (
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-indigo-100 rounded-lg">
+                            <GraduationCap className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <span className="text-gray-700 font-medium">
+                            {getGradeName(item.gradeId)}
+                        </span>
+                    </div>
+                )) as any,
+            });
+        }
+
+        // Add role column only when not filtered by role
+        if (!roleFilter) {
+            baseColumns.push({
+                header: 'الصلاحية',
+                accessor: ((item: UserData) => (
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    ${item.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                            item.role === 'TEACHER' ? 'bg-blue-100 text-blue-800' :
+                                item.role === 'STUDENT' ? 'bg-green-100 text-green-800' :
+                                    'bg-purple-100 text-purple-800'}`
+                    }>
+                        {item.role === 'ADMIN' ? 'مدير' :
+                            item.role === 'TEACHER' ? 'معلم' :
+                                item.role === 'STUDENT' ? 'طالب' : 'ولي أمر'}
+                    </span>
+                )) as any,
+            });
+        }
+
+        // Add status column
+        baseColumns.push({
             header: 'الحالة',
-            accessor: (item: UserData) => (
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            accessor: ((item: UserData) => (
+                <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${item.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
                     {item.isActive ? 'نشط' : 'غير نشط'}
                 </span>
-            )
-        },
-    ];
+            )) as any,
+        });
+
+        return baseColumns;
+    };
 
     return (
         <motion.div
@@ -155,7 +254,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                 >
                     <DataTable
                         data={users}
-                        columns={columns}
+                        columns={getColumns()}
                         onEdit={(user) => navigate(`/admin/users/create?mode=edit&id=${user.id}&role=${user.role}`)}
                         onDelete={async (user) => {
                             if (window.confirm(`هل أنت متأكد من حذف المستخدم "${user.fullName}"؟ لا يمكن التراجع عن هذا الإجراء.`)) {
@@ -171,32 +270,40 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                             }
                         }}
                         actions={(user) => (
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-2">
                                 {user.role === 'PARENT' && (
                                     <button
                                         onClick={() => handleLinkChild(user)}
-                                        className="text-indigo-600 hover:text-indigo-900 ml-3"
+                                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                         title="ربط أبناء"
                                     >
-                                        <UserPlus className="h-5 w-5" />
+                                        <UserPlus className="h-4 w-4" />
                                     </button>
                                 )}
+                                {/* Improved Activate/Deactivate Button */}
                                 <button
-                                    onClick={async () => {
-                                        if (window.confirm(`هل أنت متأكد من ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} هذا المستخدم؟`)) {
-                                            try {
-                                                await api.put(`/admin/users/${user.id}/activate?active=${!user.isActive}`);
-                                                addToast(`تم ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} المستخدم بنجاح`, 'success');
-                                                fetchUsers(); // Refresh list
-                                            } catch (err) {
-                                                console.error(err);
-                                                addToast('حدث خطأ أثناء تغيير حالة المستخدم', 'error');
-                                            }
+                                    onClick={() => handleToggleActivation(user)}
+                                    className={`
+                                        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                                        transition-all duration-200 border
+                                        ${user.isActive 
+                                            ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:border-red-300' 
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
                                         }
-                                    }}
-                                    className={`ml-3 font-medium ${user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                                    `}
+                                    title={user.isActive ? 'إلغاء التفعيل' : 'تفعيل'}
                                 >
-                                    {user.isActive ? 'إلغاء التفعيل' : 'تفعيل'}
+                                    {user.isActive ? (
+                                        <>
+                                            <PowerOff className="h-3.5 w-3.5" />
+                                            <span>إلغاء</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Power className="h-3.5 w-3.5" />
+                                            <span>تفعيل</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         )}
@@ -213,25 +320,39 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                 <div className="space-y-4">
                     <p className="text-sm text-gray-500">اختر الطلاب الذين تود ربطهم بهذا الولي للأمر.</p>
 
-                    {/* Mock Student Select for Prototype */}
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">اختر الطلاب</label>
-                        <select
-                            multiple
-                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md h-32"
+                    {loadingStudents ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <span className="mr-3 text-gray-500">جاري تحميل الطلاب...</span>
+                        </div>
+                    ) : (
+                        <SearchableMultiSelect
+                            label="اختر الطلاب"
+                            options={allStudents.map(s => ({
+                                value: s.id.toString(),
+                                label: `${s.fullName}${s.gradeId ? ` (${grades.find(g => g.id === s.gradeId)?.name || ''})` : ''}`
+                            }))}
                             value={selectedChildren}
-                            onChange={(e) => setSelectedChildren(Array.from(e.target.selectedOptions, option => option.value))}
-                        >
-                            <option value="1">أحمد محمد (الصف السادس)</option>
-                            <option value="2">سارة علي (الصف الرابع)</option>
-                            <option value="3">كريم محمود (الصف الخامس)</option>
-                        </select>
-                        <p className="text-xs text-gray-500 mt-2">اضغط مفتاح Ctrl (أو Cmd) لاختيار أكثر من طالب.</p>
-                    </div>
+                            onChange={setSelectedChildren}
+                            placeholder="ابحث عن طالب..."
+                        />
+                    )}
 
-                    <div className="flex justify-end pt-4">
-                        <Button variant="secondary" onClick={() => setLinkModalOpen(false)} className="ml-2">إلغاء</Button>
-                        <Button onClick={submitLinkChildren}>حفظ التغييرات</Button>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setLinkModalOpen(false)}
+                            disabled={savingLink}
+                        >
+                            إلغاء
+                        </Button>
+                        <Button 
+                            onClick={submitLinkChildren}
+                            disabled={savingLink || selectedChildren.length === 0}
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                        >
+                            {savingLink ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                        </Button>
                     </div>
                 </div>
             </Modal>

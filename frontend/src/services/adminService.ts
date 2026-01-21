@@ -1,5 +1,5 @@
 import api from './api';
-import { Grade, Subject, UserResponse, CreateUserRequest } from '../types/api';
+import { Grade, Subject, UserResponse, CreateUserRequest, StudentReportResponse } from '../types/api';
 
 export const adminService = {
     // Grades
@@ -10,6 +10,13 @@ export const adminService = {
     createGrade: async (name: string, level: number): Promise<Grade> => {
         const response = await api.post('/admin/grades', { name, level });
         return response.data;
+    },
+    updateGrade: async (id: number, name: string, level: number): Promise<Grade> => {
+        const response = await api.put(`/admin/grades/${id}`, { name, level });
+        return response.data;
+    },
+    deleteGrade: async (id: number): Promise<void> => {
+        await api.delete(`/admin/grades/${id}`);
     },
 
     // Subjects
@@ -71,5 +78,27 @@ export const adminService = {
     getStudentsPerGrade: async (): Promise<Record<string, number>> => {
         const response = await api.get('/admin/stats/students-per-grade');
         return response.data;
-    }
+    },
+
+    // Student-Parent Linking
+    assignChildrenToParent: async (parentId: number, childIds: number[]): Promise<void> => {
+        await api.post(`/admin/parents/${parentId}/children`, { childIds });
+    },
+    removeChildFromParent: async (parentId: number, childId: number): Promise<void> => {
+        await api.delete(`/admin/parents/${parentId}/children/${childId}`);
+    },
+
+    // Student Search & Reports
+    searchStudents: async (query?: string, gradeId?: number): Promise<UserResponse[]> => {
+        const params = new URLSearchParams();
+        if (query) params.append('query', query);
+        if (gradeId) params.append('gradeId', gradeId.toString());
+        const response = await api.get(`/admin/students/search?${params.toString()}`);
+        return response.data;
+    },
+    getStudentReport: async (studentId: number): Promise<StudentReportResponse> => {
+        const response = await api.get(`/admin/students/${studentId}/report`);
+        return response.data;
+    },
 };
+

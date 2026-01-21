@@ -18,6 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { name: 'المستخدمين', href: '/admin/users', icon: Users },
         { name: 'المعلمين', href: '/admin/teachers', icon: BookOpen },
         { name: 'الطلاب', href: '/admin/students', icon: GraduationCap },
+        { name: 'أولياء الأمور', href: '/admin/parents', icon: Users },
         { name: 'الصفوف الدراسية', href: '/admin/grades', icon: BookOpen },
     ];
 

@@ -1,21 +1,48 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
-import { Video, FileText, BarChart2, Calendar, Star, Book } from 'lucide-react';
+import { Video, FileText, BarChart2, Calendar, Book, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
+import { studentService } from '../../services/studentService';
+import { StudentScheduleResponse, AttendanceSummary } from '../../types/api';
 
 export const StudentDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [schedule, setSchedule] = useState<StudentScheduleResponse[]>([]);
+    const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummary | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [scheduleData, summaryData] = await Promise.all([
+                    studentService.getSchedule(),
+                    studentService.getAttendanceSummary()
+                ]);
+                setSchedule(scheduleData);
+                setAttendanceSummary(summaryData);
+            } catch (error) {
+                console.error('Failed to fetch student data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    // Get today's classes
+    const todayClasses = schedule.filter(cls => {
+        const classDate = new Date(cls.scheduledTime).toDateString();
+        return classDate === new Date().toDateString();
+    });
 
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
+            transition: { staggerChildren: 0.1 }
         }
     };
 
@@ -24,10 +51,7 @@ export const StudentDashboard = () => {
         visible: {
             y: 0,
             opacity: 1,
-            transition: {
-                type: 'spring',
-                stiffness: 100
-            }
+            transition: { type: 'spring', stiffness: 100 }
         }
     };
 
@@ -45,19 +69,17 @@ export const StudentDashboard = () => {
                     </h2>
                     <p className="mt-2 text-sm text-gray-500 flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-                        الصف السادس الابتدائي | باقة سنوي
+                        نسبة الحضور: {attendanceSummary ? `${attendanceSummary.attendanceRate.toFixed(0)}%` : '--'}
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="bg-yellow-50 text-yellow-700 px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-sm border border-yellow-100">
-                        <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                        <span>350 نقطة</span>
+                    <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-sm border border-green-100">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <span>{attendanceSummary ? `${attendanceSummary.attendedClasses}/${attendanceSummary.totalClasses} حضور` : '--'}</span>
                     </div>
                 </div>
             </div>
-
-            {/* Quick Stats / Tabs Overview */}
 
             {/* Quick Stats / Tabs Overview */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -73,7 +95,7 @@ export const StudentDashboard = () => {
                             </div>
                             <div className="mr-5">
                                 <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">حصصي</h3>
-                                <p className="text-sm text-gray-500 mt-1">3 حصص اليوم</p>
+                                <p className="text-sm text-gray-500 mt-1">{todayClasses.length} حصص اليوم</p>
                             </div>
                         </div>
                     </Card>
@@ -91,7 +113,7 @@ export const StudentDashboard = () => {
                             </div>
                             <div className="mr-5">
                                 <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">واجباتي</h3>
-                                <p className="text-sm text-gray-500 mt-1">2 واجب معلق</p>
+                                <p className="text-sm text-gray-500 mt-1">عرض جميع الواجبات</p>
                             </div>
                         </div>
                     </Card>
@@ -109,7 +131,7 @@ export const StudentDashboard = () => {
                             </div>
                             <div className="mr-5">
                                 <h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors">اختباراتي</h3>
-                                <p className="text-sm text-gray-500 mt-1">آخر درجة: 18/20</p>
+                                <p className="text-sm text-gray-500 mt-1">عرض الاختبارات والدرجات</p>
                             </div>
                         </div>
                     </Card>
@@ -132,49 +154,55 @@ export const StudentDashboard = () => {
                     </div>
 
                     <div className="space-y-4">
-                        {/* Mock Class Item */}
-                        <motion.div
-                            whileHover={{ scale: 1.01 }}
-                            className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all group"
-                        >
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 h-14 w-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center border-2 border-white shadow-sm">
-                                    <Book className="w-6 h-6 text-indigo-600" />
-                                </div>
-                                <div className="mr-4">
-                                    <h4 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">رياضيات (Math)</h4>
-                                    <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                                        <span>أ. أحمد محمد</span>
-                                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                        <span className="text-indigo-500 font-medium">4:00 عصراً</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <button className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 focus:outline-none shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center gap-2">
-                                <span>انضمام</span>
-                                <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                </span>
-                            </button>
-                        </motion.div>
-
-                        <motion.div
-                            className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 opacity-75 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300"
-                        >
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 h-14 w-14 rounded-full bg-green-50 flex items-center justify-center border-2 border-white shadow-sm">
-                                    <span className="text-xl font-bold text-green-600">S</span>
-                                </div>
-                                <div className="mr-4">
-                                    <h4 className="text-lg font-bold text-gray-900">علوم (Science)</h4>
-                                    <p className="text-sm text-gray-500 mt-1">أ. سارة علي | 5:30 عصراً</p>
-                                </div>
-                            </div>
-                            <span className="px-4 py-2 bg-gray-200 text-gray-600 text-sm font-medium rounded-lg">
-                                قريباً
-                            </span>
-                        </motion.div>
+                        {loading ? (
+                            <div className="text-center py-8 text-gray-500">جاري التحميل...</div>
+                        ) : todayClasses.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">لا توجد حصص اليوم</div>
+                        ) : (
+                            todayClasses.map((cls) => (
+                                <motion.div
+                                    key={cls.id}
+                                    whileHover={{ scale: 1.01 }}
+                                    className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all group"
+                                >
+                                    <div className="flex items-center">
+                                        <div className="flex-shrink-0 h-14 w-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center border-2 border-white shadow-sm">
+                                            <Book className="w-6 h-6 text-indigo-600" />
+                                        </div>
+                                        <div className="mr-4">
+                                            <h4 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                                {cls.subjectName || cls.title}
+                                            </h4>
+                                            <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                                                <span>{cls.teacherName || 'معلم'}</span>
+                                                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                <span className="text-indigo-500 font-medium">
+                                                    {new Date(cls.scheduledTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {cls.teamsMeetingUrl ? (
+                                        <a
+                                            href={cls.teamsMeetingUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 focus:outline-none shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center gap-2"
+                                        >
+                                            <span>انضمام</span>
+                                            <span className="relative flex h-3 w-3">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                            </span>
+                                        </a>
+                                    ) : (
+                                        <span className="px-4 py-2 bg-gray-200 text-gray-600 text-sm font-medium rounded-lg">
+                                            {cls.status === 'COMPLETED' ? 'انتهت' : 'قريباً'}
+                                        </span>
+                                    )}
+                                </motion.div>
+                            ))
+                        )}
                     </div>
                 </Card>
             </motion.div>

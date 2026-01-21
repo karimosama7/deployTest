@@ -1,6 +1,7 @@
 package com.abnaouna.abnaouna_backend.service;
 
 import com.abnaouna.abnaouna_backend.dto.request.CreateUserRequest;
+import com.abnaouna.abnaouna_backend.dto.response.StudentReportResponse;
 import com.abnaouna.abnaouna_backend.dto.response.UserResponse;
 import com.abnaouna.abnaouna_backend.entity.*;
 import com.abnaouna.abnaouna_backend.repository.*;
@@ -268,6 +269,16 @@ public class AdminService {
                 if (student.getGrade() != null) {
                     builder.gradeId(student.getGrade().getId());
                 }
+                if (student.getParent() != null) {
+                    builder.parentId(student.getParent().getUser().getId());
+                }
+            });
+        } else if (user.getRole() == User.Role.PARENT) {
+            parentRepository.findByUserId(user.getId()).ifPresent(parent -> {
+                List<Long> childrenUserIds = parent.getChildren().stream()
+                        .map(student -> student.getUser().getId())
+                        .collect(Collectors.toList());
+                builder.childrenIds(childrenUserIds);
             });
         }
         
@@ -303,5 +314,72 @@ public class AdminService {
             stats.put(grade.getName(), count);
         }
         return stats;
+    }
+
+    // ==================== Student-Parent Linking ====================
+
+    @Transactional
+    public void assignChildrenToParent(Long parentId, Long[] childIds) {
+        Parent parent = parentRepository.findById(parentId)
+                .orElseThrow(() -> new RuntimeException("Parent not found"));
+        
+        for (Long childId : childIds) {
+            Student student = studentRepository.findById(childId)
+                    .orElseThrow(() -> new RuntimeException("Student not found: " + childId));
+            student.setParent(parent);
+            studentRepository.save(student);
+        }
+    }
+
+    @Transactional
+    public void removeChildFromParent(Long parentId, Long childId) {
+        Student student = studentRepository.findById(childId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        
+        if (student.getParent() != null && student.getParent().getId().equals(parentId)) {
+            student.setParent(null);
+            studentRepository.save(student);
+        }
+    }
+
+    // ==================== Student Search ====================
+
+    public List<UserResponse> searchStudents(String query, Long gradeId) {
+        List<Student> students;
+        
+        if (gradeId != null) {
+            students = studentRepository.findByGradeId(gradeId);
+        } else {
+            students = studentRepository.findAll();
+        }
+        
+        // Filter by name if query provided
+        if (query != null && !query.isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            students = students.stream()
+                    .filter(s -> s.getUser() != null && 
+                            s.getUser().getFullName().toLowerCase().contains(lowerQuery))
+                    .collect(Collectors.toList());
+        }
+        
+        return students.stream()
+                .map(s -> mapToUserResponse(s.getUser()))
+                .collect(Collectors.toList());
+    }
+
+    // ==================== Student Report ====================
+
+    public StudentReportResponse getStudentReport(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        
+        // This would be enhanced with actual data from other repositories
+        return StudentReportResponse.builder()
+                .studentId(student.getId())
+                .fullName(student.getUser() != null ? student.getUser().getFullName() : null)
+                .gradeName(student.getGrade() != null ? student.getGrade().getName() : null)
+                .parentName(student.getParent() != null && student.getParent().getUser() != null 
+                        ? student.getParent().getUser().getFullName() : null)
+                .build();
     }
 }

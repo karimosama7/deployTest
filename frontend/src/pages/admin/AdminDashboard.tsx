@@ -7,12 +7,19 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
+import { adminService } from '../../services/adminService';
+import { UserResponse } from '../../types/api';
 
 export const AdminDashboard = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [studentsPerGrade, setStudentsPerGrade] = useState<{ grade: string; count: number }[]>([]);
+    
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<UserResponse[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
     // Stats state with gradients
     const [stats, setStats] = useState([
@@ -222,28 +229,79 @@ export const AdminDashboard = () => {
                             <h3 className="text-xl font-bold text-gray-900">بحث سريع</h3>
                             <p className="text-sm text-gray-500 mt-1">الوصول السريع لملفات الطلاب</p>
                         </div>
-                        <div className="relative">
-                            <Input
-                                placeholder="ابحث باسم الطالب أو الرقم التعريفي..."
-                                className="pl-12 py-6 text-lg shadow-sm border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-xl transition-all hover:bg-white focus:bg-white bg-gray-50/50"
-                            />
-                            <div className="absolute left-2 top-2 bottom-2">
-                                <Button className="h-full aspect-square rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-transform hover:scale-105 active:scale-95">
-                                    <Search className="h-5 w-5" />
-                                </Button>
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!searchQuery.trim()) return;
+                            setIsSearching(true);
+                            try {
+                                const results = await adminService.searchStudents(searchQuery);
+                                setSearchResults(results);
+                                if (results.length === 0) {
+                                    addToast('لم يتم العثور على نتائج', 'info');
+                                }
+                            } catch (err) {
+                                addToast('فشل البحث', 'error');
+                            } finally {
+                                setIsSearching(false);
+                            }
+                        }}>
+                            <div className="relative">
+                                <Input
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="ابحث باسم الطالب..."
+                                    className="pl-12 py-6 text-lg shadow-sm border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-xl transition-all hover:bg-white focus:bg-white bg-gray-50/50"
+                                />
+                                <div className="absolute left-2 top-2 bottom-2">
+                                    <Button 
+                                        type="submit"
+                                        disabled={isSearching}
+                                        className="h-full aspect-square rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-transform hover:scale-105 active:scale-95"
+                                    >
+                                        {isSearching ? (
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                        ) : (
+                                            <Search className="h-5 w-5" />
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
+                        </form>
 
-                        <div className="mt-8">
-                            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">عمليات بحث حديثة</h4>
-                            <div className="flex flex-wrap gap-2">
-                                {['أحمد محمد', 'الصف الأول', 'سارة علي'].map(tag => (
-                                    <span key={tag} className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-indigo-300 hover:text-indigo-600 cursor-pointer transition-colors shadow-sm">
-                                        {tag}
-                                    </span>
+                        {/* Search Results */}
+                        {searchResults.length > 0 && (
+                            <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                                {searchResults.map(student => (
+                                    <div 
+                                        key={student.id}
+                                        onClick={() => navigate(`/admin/students`)}
+                                        className="p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 cursor-pointer flex justify-between items-center"
+                                    >
+                                        <span className="font-medium text-gray-800">{student.fullName}</span>
+                                        <span className="text-sm text-gray-500">{student.email}</span>
+                                    </div>
                                 ))}
                             </div>
-                        </div>
+                        )}
+
+                        {searchResults.length === 0 && (
+                            <div className="mt-8">
+                                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">عمليات بحث سريعة</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {['معلم', 'طالب', 'ولي أمر'].map(tag => (
+                                        <span 
+                                            key={tag} 
+                                            onClick={() => {
+                                                setSearchQuery(tag);
+                                            }}
+                                            className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-indigo-300 hover:text-indigo-600 cursor-pointer transition-colors shadow-sm"
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </Card>
                 </motion.div>
             </div>

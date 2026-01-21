@@ -1,6 +1,8 @@
 package com.abnaouna.abnaouna_backend.controller;
 
+import com.abnaouna.abnaouna_backend.dto.request.AssignChildrenRequest;
 import com.abnaouna.abnaouna_backend.dto.request.CreateUserRequest;
+import com.abnaouna.abnaouna_backend.dto.response.StudentReportResponse;
 import com.abnaouna.abnaouna_backend.dto.response.UserResponse;
 import com.abnaouna.abnaouna_backend.entity.User;
 import com.abnaouna.abnaouna_backend.service.AdminService;
@@ -93,6 +95,18 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(request));
     }
 
+    @GetMapping("/students/search")
+    public ResponseEntity<List<UserResponse>> searchStudents(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) Long gradeId) {
+        return ResponseEntity.ok(adminService.searchStudents(query, gradeId));
+    }
+
+    @GetMapping("/students/{id}/report")
+    public ResponseEntity<StudentReportResponse> getStudentReport(@PathVariable Long id) {
+        return ResponseEntity.ok(adminService.getStudentReport(id));
+    }
+
     // ==================== Parents ====================
 
     @GetMapping("/parents")
@@ -106,6 +120,22 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createUser(request));
     }
 
+    @PostMapping("/parents/{parentId}/children")
+    public ResponseEntity<Void> assignChildrenToParent(
+            @PathVariable Long parentId,
+            @RequestBody AssignChildrenRequest request) {
+        adminService.assignChildrenToParent(parentId, request.getChildIds());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/parents/{parentId}/children/{childId}")
+    public ResponseEntity<Void> removeChildFromParent(
+            @PathVariable Long parentId,
+            @PathVariable Long childId) {
+        adminService.removeChildFromParent(parentId, childId);
+        return ResponseEntity.noContent().build();
+    }
+
     // ==================== Statistics ====================
 
     @GetMapping("/stats/students-per-grade")
@@ -113,3 +143,4 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getStudentCountByGrade());
     }
 }
+

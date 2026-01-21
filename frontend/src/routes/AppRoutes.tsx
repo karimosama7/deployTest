@@ -22,6 +22,7 @@ import { TeacherExamsPage } from '../pages/teacher/ExamsPage';
 import { ParentLayout } from '../components/layout/ParentLayout';
 import { ParentDashboard } from '../pages/parent/ParentDashboard';
 import { ParentChildrenPage } from '../pages/parent/ParentChildrenPage';
+import { ChildDetailPage } from '../pages/parent/ChildDetailPage';
 
 interface ProtectedRouteProps {
     allowedRoles?: UserRole[];
@@ -71,6 +72,7 @@ export const AppRoutes = () => {
                     <Route path="reports/student" element={<StudentReportPage />} />
                     <Route path="teachers" element={<UsersPage roleFilter="TEACHER" />} />
                     <Route path="students" element={<UsersPage roleFilter="STUDENT" />} />
+                    <Route path="parents" element={<UsersPage roleFilter="PARENT" />} />
                     <Route path="grades" element={<GradesPage />} />
                 </Route>
             </Route>
@@ -90,6 +92,7 @@ export const AppRoutes = () => {
                 <Route path="/parent" element={<ParentLayout />}>
                     <Route index element={<ParentDashboard />} />
                     <Route path="children" element={<ParentChildrenPage />} />
+                    <Route path="children/:childId" element={<ChildDetailPage />} />
                     <Route path="reports" element={<div>Parent Reports Placeholder</div>} />
                 </Route>
             </Route>
