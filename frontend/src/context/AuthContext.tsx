@@ -19,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (credentials: any) => Promise<void>;
+  login: (credentials: any, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
 }
 
@@ -27,7 +27,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  // Check both localStorage and sessionStorage for token
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem('token') || sessionStorage.getItem('token')
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { addToast } = useToast();
@@ -72,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUser();
   }, [token]);
 
-  const login = async (credentials: any) => {
+  const login = async (credentials: any, rememberMe: boolean = false) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -113,7 +116,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // AuthResponse: { token, userId, username, fullName, role, message }
       const { token: newToken, userId, username, fullName, role } = response.data;
 
-      localStorage.setItem('token', newToken);
+      // Store token based on rememberMe preference
+      if (rememberMe) {
+        localStorage.setItem('token', newToken);
+        sessionStorage.removeItem('token');
+      } else {
+        sessionStorage.setItem('token', newToken);
+        localStorage.removeItem('token');
+      }
       setToken(newToken);
 
       // Set user state immediately from login response
@@ -136,7 +146,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    // Clear both storages
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     setToken(null);
     setUser(null);
     addToast('تم تسجيل الخروج', 'info');

@@ -114,6 +114,18 @@ public class TeacherController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/classes/{id}/start")
+    public ResponseEntity<ClassSessionResponse> startClass(@PathVariable Long id) {
+        return ResponseEntity.ok(classSessionService.updateStatus(id,
+                com.abnaouna.abnaouna_backend.entity.ClassSession.ClassStatus.LIVE));
+    }
+
+    @PostMapping("/classes/{id}/end")
+    public ResponseEntity<ClassSessionResponse> endClass(@PathVariable Long id) {
+        return ResponseEntity.ok(classSessionService.updateStatus(id,
+                com.abnaouna.abnaouna_backend.entity.ClassSession.ClassStatus.COMPLETED));
+    }
+
     // ==================== Attendance ====================
 
     @GetMapping("/classes/{id}/students")
@@ -123,8 +135,7 @@ public class TeacherController {
                 .map(s -> Map.<String, Object>of(
                         "id", s.getId(),
                         "name", s.getUser().getFullName(),
-                        "username", s.getUser().getUsername()
-                ))
+                        "username", s.getUser().getUsername()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
@@ -194,11 +205,20 @@ public class TeacherController {
         return ResponseEntity.ok(examService.getClassExams(id));
     }
 
+    @GetMapping("/exams")
+    public ResponseEntity<List<ExamResponse>> getMyExams(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long teacherId = getTeacherId(userDetails);
+        return ResponseEntity.ok(examService.getTeacherExams(teacherId));
+    }
+
     @PostMapping("/exams")
     public ResponseEntity<ExamResponse> createExam(
+            @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody ExamRequest request) {
+        Long teacherId = getTeacherId(userDetails);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(examService.createExam(request));
+                .body(examService.createExam(request, teacherId));
     }
 
     @GetMapping("/exams/{id}")

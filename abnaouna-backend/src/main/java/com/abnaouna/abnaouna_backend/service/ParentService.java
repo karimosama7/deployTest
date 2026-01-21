@@ -23,7 +23,7 @@ public class ParentService {
     public List<ChildResponse> getChildren(Long parentId) {
         Parent parent = parentRepository.findById(parentId)
                 .orElseThrow(() -> new RuntimeException("Parent not found"));
-        
+
         return parent.getChildren().stream()
                 .map(this::mapToChildResponse)
                 .collect(Collectors.toList());
@@ -35,12 +35,12 @@ public class ParentService {
     public ChildResponse getChild(Long parentId, Long childId) {
         Parent parent = parentRepository.findById(parentId)
                 .orElseThrow(() -> new RuntimeException("Parent not found"));
-        
+
         Student child = parent.getChildren().stream()
                 .filter(s -> s.getId().equals(childId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Child not found or not linked to this parent"));
-        
+
         return mapToChildResponse(child);
     }
 
@@ -90,10 +90,10 @@ public class ParentService {
     private void verifyParentChildRelationship(Long parentId, Long childId) {
         Parent parent = parentRepository.findById(parentId)
                 .orElseThrow(() -> new RuntimeException("Parent not found"));
-        
+
         boolean isChild = parent.getChildren().stream()
                 .anyMatch(s -> s.getId().equals(childId));
-        
+
         if (!isChild) {
             throw new RuntimeException("Access denied: Child not linked to this parent");
         }
@@ -101,12 +101,27 @@ public class ParentService {
 
     private ChildResponse mapToChildResponse(Student student) {
         AttendanceSummary attendanceSummary = studentDataService.getAttendanceSummary(student.getId());
-        
+
         return ChildResponse.builder()
                 .id(student.getId())
                 .fullName(student.getUser() != null ? student.getUser().getFullName() : null)
                 .gradeName(student.getGrade() != null ? student.getGrade().getName() : null)
                 .attendanceRate(attendanceSummary.getAttendanceRate())
                 .build();
+    }
+
+    public List<StudentScheduleResponse> getAllChildrenUpcomingSchedule(Long parentId) {
+        Parent parent = parentRepository.findById(parentId)
+                .orElseThrow(() -> new RuntimeException("Parent not found"));
+
+        return parent.getChildren().stream()
+                .flatMap(child -> studentDataService.getSchedule(child.getId()).stream()
+                        .filter(schedule -> !"COMPLETED".equals(schedule.getStatus())) // Only upcoming/live
+                        .peek(schedule -> {
+                            schedule.setStudentId(child.getId());
+                            schedule.setStudentName(child.getUser().getFullName());
+                        }))
+                .sorted((s1, s2) -> s1.getScheduledTime().compareTo(s2.getScheduledTime()))
+                .collect(Collectors.toList());
     }
 }

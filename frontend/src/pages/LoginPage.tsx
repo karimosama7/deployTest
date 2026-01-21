@@ -17,17 +17,21 @@ export function LoginPage({
   } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const isRTL = lang === 'ar';
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedRole) {
-      await login(selectedRole, email);
+      // Pass proper credentials object and rememberMe flag
+      await login({ username: email, password }, rememberMe);
     }
   };
+
   const getRoleConfig = () => {
     switch (selectedRole) {
-      case 'student':
+      case 'STUDENT':
         return {
           icon: GraduationCap,
           color: 'text-blue-600',
@@ -35,7 +39,7 @@ export function LoginPage({
           labelAr: 'دخول الطالب',
           labelEn: 'Student Login'
         };
-      case 'parent':
+      case 'PARENT':
         return {
           icon: Users,
           color: 'text-emerald-600',
@@ -43,7 +47,7 @@ export function LoginPage({
           labelAr: 'دخول ولي الأمر',
           labelEn: 'Parent Login'
         };
-      case 'teacher':
+      case 'TEACHER':
         return {
           icon: BookOpen,
           color: 'text-amber-600',
@@ -51,7 +55,7 @@ export function LoginPage({
           labelAr: 'دخول المدرس',
           labelEn: 'Teacher Login'
         };
-      case 'admin':
+      case 'ADMIN':
         return {
           icon: Shield,
           color: 'text-slate-800',
@@ -71,7 +75,9 @@ export function LoginPage({
   };
   const config = getRoleConfig();
   const RoleIcon = config.icon;
-  return <div className={`min-h-screen bg-slate-50 flex items-center justify-center p-4 ${isRTL ? 'dir-rtl' : 'dir-ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+
+  return (
+    <div className={`min-h-screen bg-slate-50 flex items-center justify-center p-4 ${isRTL ? 'dir-rtl' : 'dir-ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-fade-in">
         {/* Header */}
         <div className="p-8 text-center border-b border-slate-50 relative">
@@ -96,7 +102,14 @@ export function LoginPage({
             <label className="block text-sm font-medium text-slate-700">
               {lang === 'ar' ? 'اسم المستخدم' : 'User Name'}
             </label>
-            <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" placeholder={lang === 'ar' ? 'example@email.com' : 'example@email.com'} required />
+            <input
+              type="text"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+              placeholder={lang === 'ar' ? 'example@email.com' : 'example@email.com'}
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -108,23 +121,36 @@ export function LoginPage({
                 {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
               </a>
             </div>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" placeholder="••••••••" required />
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+              placeholder="••••••••"
+              required
+            />
           </div>
 
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="remember" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-            <label htmlFor="remember" className="text-sm text-slate-600">
+            <input
+              type="checkbox"
+              id="remember"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">
               {lang === 'ar' ? 'تذكرني' : 'Remember me'}
             </label>
           </div>
 
           <button type="submit" disabled={isLoading} className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {isLoading ? <>
-                <Loader2 size={20} className="animate-spin" />
-                <span>
-                  {lang === 'ar' ? 'جاري الدخول...' : 'Logging in...'}
-                </span>
-              </> : <span>{lang === 'ar' ? 'دخول' : 'Login'}</span>}
+              <Loader2 size={20} className="animate-spin" />
+              <span>
+                {lang === 'ar' ? 'جاري الدخول...' : 'Logging in...'}
+              </span>
+            </> : <span>{lang === 'ar' ? 'دخول' : 'Login'}</span>}
           </button>
         </form>
 
@@ -135,5 +161,6 @@ export function LoginPage({
           </a>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 }

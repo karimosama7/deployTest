@@ -41,21 +41,28 @@ export const CreateUserPage = () => {
     });
 
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // Parents and Students lists for dropdowns
     const [parentsList, setParentsList] = useState<{ value: string; label: string }[]>([]);
     const [studentsList, setStudentsList] = useState<{ value: string; label: string }[]>([]);
+    // Grades and Subjects lists
+    const [gradeOptions, setGradeOptions] = useState<{ value: string; label: string }[]>([]);
+    const [subjectOptions, setSubjectOptions] = useState<{ value: string; label: string }[]>([]);
 
-    // Fetch parents and students lists
+    // Fetch parents, students, grades, and subjects lists
     useEffect(() => {
         const fetchLists = async () => {
             try {
-                const [parents, students] = await Promise.all([
+                const [parents, students, grades, subjects] = await Promise.all([
                     adminService.getParents(),
-                    adminService.getStudents()
+                    adminService.getStudents(),
+                    adminService.getGrades(),
+                    adminService.getSubjects()
                 ]);
                 setParentsList(parents.map(p => ({ value: String(p.id), label: p.fullName })));
                 setStudentsList(students.map(s => ({ value: String(s.id), label: s.fullName })));
+                setGradeOptions(grades.map(g => ({ value: String(g.id), label: g.name })));
+                setSubjectOptions(subjects.map(s => ({ value: String(s.id), label: s.nameAr ? `${s.nameAr} - ${s.name}` : s.name })));
             } catch (error) {
                 console.error('Failed to fetch lists', error);
             }
@@ -95,22 +102,7 @@ export const CreateUserPage = () => {
     const [createdUser, setCreatedUser] = useState<{ username: string, password: string } | null>(null);
     const [copied, setCopied] = useState(false);
 
-    // ... options ...
-    const gradeOptions = [
-        { value: '1', label: 'الصف الأول الابتدائي' },
-        { value: '2', label: 'الصف الثاني الابتدائي' },
-        { value: '3', label: 'الصف الثالث الابتدائي' },
-        { value: '4', label: 'الصف الرابع الابتدائي' },
-        { value: '5', label: 'الصف الخامس الابتدائي' },
-        { value: '6', label: 'الصف السادس الابتدائي' },
-    ];
-
-    const subjectOptions = [
-        { value: '1', label: 'الرياضيات - Math' },
-        { value: '2', label: 'العلوم - Science' },
-        { value: '3', label: 'اللغة العربية' },
-        { value: '4', label: 'اللغة الإنجليزية' },
-    ];
+    // Options are now fetched dynamically from backend
 
     const subscriptionOptions = [
         { value: 'FREE', label: 'مجاني' },
@@ -144,7 +136,7 @@ export const CreateUserPage = () => {
             }
 
             let response;
-            
+
             if (isEditMode && editUserId) {
                 // UPDATE existing user
                 response = await api.put(`/admin/users/${editUserId}`, payload);

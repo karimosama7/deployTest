@@ -5,6 +5,7 @@ import com.abnaouna.abnaouna_backend.entity.Parent;
 import com.abnaouna.abnaouna_backend.entity.User;
 import com.abnaouna.abnaouna_backend.repository.ParentRepository;
 import com.abnaouna.abnaouna_backend.repository.UserRepository;
+import com.abnaouna.abnaouna_backend.service.NotificationService;
 import com.abnaouna.abnaouna_backend.service.ParentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import java.util.List;
 public class ParentController {
 
     private final ParentService parentService;
+    private final NotificationService notificationService;
     private final ParentRepository parentRepository;
     private final UserRepository userRepository;
 
@@ -97,11 +99,40 @@ public class ParentController {
         return ResponseEntity.ok(parentService.getChildAttendance(parentId, childId));
     }
 
+    @GetMapping("/children/schedule")
+    public ResponseEntity<List<StudentScheduleResponse>> getAllChildrenSchedule(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long parentId = getParentId(userDetails);
+        return ResponseEntity.ok(parentService.getAllChildrenUpcomingSchedule(parentId));
+    }
+
     @GetMapping("/children/{childId}/attendance/summary")
     public ResponseEntity<AttendanceSummary> getChildAttendanceSummary(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long childId) {
         Long parentId = getParentId(userDetails);
         return ResponseEntity.ok(parentService.getChildAttendanceSummary(parentId, childId));
+    }
+
+    // ==================== Notifications ====================
+
+    @GetMapping("/notifications")
+    public ResponseEntity<List<NotificationResponse>> getNotifications(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long parentId = getParentId(userDetails);
+        return ResponseEntity.ok(notificationService.getParentNotifications(parentId));
+    }
+
+    @PutMapping("/notifications/{id}/read")
+    public ResponseEntity<NotificationResponse> markNotificationAsRead(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(notificationService.markAsRead(id));
+    }
+
+    @GetMapping("/notifications/unread-count")
+    public ResponseEntity<Long> getUnreadCount(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long parentId = getParentId(userDetails);
+        return ResponseEntity.ok(notificationService.getUnreadCount(parentId));
     }
 }

@@ -1,11 +1,12 @@
 import api from './api';
-import { 
-    ChildResponse, 
-    StudentScheduleResponse, 
-    StudentHomeworkResponse, 
-    StudentExamResponse, 
+import {
+    ChildResponse,
+    StudentScheduleResponse,
+    StudentHomeworkResponse,
+    StudentExamResponse,
     StudentAttendanceResponse,
-    AttendanceSummary 
+    AttendanceSummary,
+    NotificationResponse
 } from '../types/api';
 
 export const parentService = {
@@ -22,6 +23,10 @@ export const parentService = {
     // Child Schedule
     getChildSchedule: async (childId: number): Promise<StudentScheduleResponse[]> => {
         const response = await api.get(`/parent/children/${childId}/schedule`);
+        return response.data;
+    },
+    getAllChildrenSchedule: async (): Promise<StudentScheduleResponse[]> => {
+        const response = await api.get('/parent/children/schedule');
         return response.data;
     },
 
@@ -44,6 +49,20 @@ export const parentService = {
     },
     getChildAttendanceSummary: async (childId: number): Promise<AttendanceSummary> => {
         const response = await api.get(`/parent/children/${childId}/attendance/summary`);
+        return response.data;
+    },
+
+    // Notifications
+    getNotifications: async (): Promise<NotificationResponse[]> => {
+        const response = await api.get('/parent/notifications');
+        return response.data;
+    },
+    markNotificationRead: async (id: number): Promise<NotificationResponse> => {
+        const response = await api.put(`/parent/notifications/${id}/read`);
+        return response.data;
+    },
+    getUnreadCount: async (): Promise<number> => {
+        const response = await api.get('/parent/notifications/unread-count');
         return response.data;
     },
 };

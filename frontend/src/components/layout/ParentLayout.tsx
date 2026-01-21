@@ -4,6 +4,7 @@ import { Home, Users, X, Menu, LogOut, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../../assets/Logo.png';
+import { NotificationCenter } from '../common/NotificationCenter';
 
 const ParentSidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { user, logout } = useAuth();
@@ -100,18 +101,26 @@ export const ParentLayout: React.FC = () => {
         <div className="h-screen flex overflow-hidden bg-gray-100">
             <ParentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex flex-col w-0 flex-1 overflow-hidden md:mr-56">
-                <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow md:hidden">
-                    <button type="button" className="px-4 border-l border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onClick={() => setSidebarOpen(true)}>
+                <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow md:hidden justify-between items-center px-4">
+                    <button type="button" className="border-l border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onClick={() => setSidebarOpen(true)}>
                         <span className="sr-only">Open sidebar</span>
                         <Menu className="h-6 w-6" aria-hidden="true" />
                     </button>
-                    <div className="flex-1 px-4 flex justify-between">
-                        <div className="flex-1 flex"></div>
-                        <div className="ml-4 flex items-center md:ml-6">
-                            <button onClick={() => { logout(); navigate('/login'); }} className="p-1 text-gray-400 hover:text-red-500">
-                                <LogOut className="h-6 w-6" />
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <NotificationCenter />
+                        <button onClick={() => { logout(); navigate('/login'); }} className="p-1 text-gray-400 hover:text-red-500">
+                            <LogOut className="h-6 w-6" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Desktop Header for Notifications */}
+                <div className="hidden md:flex h-16 bg-white shadow-sm justify-between items-center px-6 sticky top-0 z-10">
+                    <div className="text-xl font-bold text-gray-800">
+                        {/* Page Title could go here */}
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <NotificationCenter />
                     </div>
                 </div>
 

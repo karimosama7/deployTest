@@ -1,11 +1,11 @@
 import api from './api';
-import { 
-    HomeworkSubmissionResponse, 
-    StudentScheduleResponse, 
-    StudentHomeworkResponse, 
-    StudentExamResponse, 
+import {
+    HomeworkSubmissionResponse,
+    StudentScheduleResponse,
+    StudentHomeworkResponse,
+    StudentExamResponse,
     StudentAttendanceResponse,
-    AttendanceSummary 
+    AttendanceSummary
 } from '../types/api';
 
 export const studentService = {
@@ -14,6 +14,9 @@ export const studentService = {
         const response = await api.get('/student/schedule');
         return response.data;
     },
+    joinSession: async (sessionId: number): Promise<void> => {
+        await api.post(`/student/sessions/${sessionId}/join`);
+    },
 
     // Homework
     getHomework: async (): Promise<StudentHomeworkResponse[]> => {
@@ -21,7 +24,7 @@ export const studentService = {
         return response.data;
     },
     submitHomework: async (homeworkId: number, solutionUrl: string): Promise<HomeworkSubmissionResponse> => {
-        const response = await api.post(`/student/homework/${homeworkId}/submit`, { solutionUrl });
+        const response = await api.post(`/student/homework/${homeworkId}/submit`, { homeworkId, solutionUrl });
         return response.data;
     },
 

@@ -32,15 +32,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     const { isAuthenticated, user, isLoading } = useAuth();
 
     if (isLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
     }
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
 
+    // If user has wrong role, redirect to their correct dashboard
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-        return <div className="p-4 text-red-600">Unauthorized Access. You need to be: {allowedRoles.join(', ')}</div>;
+        const roleRedirects: Record<string, string> = {
+            'ADMIN': '/admin',
+            'TEACHER': '/teacher',
+            'STUDENT': '/student',
+            'PARENT': '/parent'
+        };
+        const targetPath = roleRedirects[user.role] || '/login';
+        return <Navigate to={targetPath} replace />;
     }
 
     return <Outlet />;

@@ -9,12 +9,15 @@ import java.util.List;
 
 @Repository
 public interface HomeworkRepository extends JpaRepository<Homework, Long> {
-    
+
     List<Homework> findByClassSession(ClassSession classSession);
-    
+
     List<Homework> findByClassSessionId(Long classSessionId);
-    
+
     List<Homework> findByDueDateBefore(LocalDateTime dateTime);
-    
+
     List<Homework> findByDueDateAfter(LocalDateTime dateTime);
+
+    // Sorted queries (newest first)
+    List<Homework> findByClassSessionIdOrderByCreatedAtDesc(Long classSessionId);
 }

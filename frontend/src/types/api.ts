@@ -102,10 +102,11 @@ export interface HomeworkSubmissionResponse {
 // ==================== Exams ====================
 
 export interface ExamRequest {
-    classSessionId: number;
+    gradeId: number;
+    subjectId: number;
     title: string;
     formUrl?: string;
-    examDate: string; // "YYYY-MM-DD"
+    examDate: string; // "YYYY-MM-DDTHH:mm:ss"
 }
 
 export interface ExamResponse {
@@ -184,6 +185,8 @@ export interface StudentScheduleResponse {
     status: string;
     teamsMeetingUrl?: string;
     teamsRecordingUrl?: string;
+    studentId?: number;
+    studentName?: string;
 }
 
 export interface StudentHomeworkResponse {
@@ -244,5 +247,20 @@ export interface StudentReportResponse {
 
 export interface AssignChildrenRequest {
     childIds: number[];
+}
+
+// ==================== Notifications ====================
+
+export type NotificationType = 'ATTENDANCE' | 'HOMEWORK_SUBMISSION' | 'HOMEWORK_GRADED' | 'EXAM_RESULT' | 'EXAM_COMPLETED' | 'GENERAL';
+
+export interface NotificationResponse {
+    id: number;
+    studentId?: number;
+    studentName?: string;
+    title: string;
+    message: string;
+    type: NotificationType;
+    isRead: boolean;
+    createdAt: string;
 }
 

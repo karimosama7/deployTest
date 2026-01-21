@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 export const LoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
     const { login, error: authError, isLoading, isAuthenticated, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -37,7 +38,7 @@ export const LoginPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await login({ username, password });
+            await login({ username, password }, rememberMe);
         } catch (err) {
             // Error handled in context
         }
@@ -144,6 +145,21 @@ export const LoginPage = () => {
                                     </div>
                                 </motion.div>
                             )}
+
+                            {/* Remember Me Checkbox */}
+                            <motion.div variants={itemVariants} className="flex items-center">
+                                <input
+                                    id="remember-me"
+                                    name="remember-me"
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                                />
+                                <label htmlFor="remember-me" className="mr-2 block text-sm text-gray-700 cursor-pointer">
+                                    تذكرني
+                                </label>
+                            </motion.div>
 
                             <motion.div variants={itemVariants}>
                                 <Button

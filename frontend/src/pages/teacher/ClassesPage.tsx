@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Calendar, Clock, Plus, Users, CheckCircle, Trash2 } from 'lucide-react';
+import { Video, Calendar, Clock, Plus, Users, CheckCircle, Trash2, Play, Square, Upload } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
@@ -26,6 +26,11 @@ export const TeacherClassesPage = () => {
         time: '',
         teamsMeetingUrl: ''
     });
+
+    // Recording Modal State
+    const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
+    const [selectedClassForRecording, setSelectedClassForRecording] = useState<ClassSessionResponse | null>(null);
+    const [recordingUrl, setRecordingUrl] = useState('');
 
     useEffect(() => {
         loadData();
@@ -74,7 +79,7 @@ export const TeacherClassesPage = () => {
             const selectedGrade = grades.find(g => g.id === parseInt(formData.gradeId));
             const selectedSubject = subjects.find(s => s.id === parseInt(formData.subjectId));
             const autoTitle = `${selectedSubject?.nameAr || selectedSubject?.name || 'حصة'} - ${selectedGrade?.name || ''} - ${formData.date}`;
-            
+
             await teacherService.createClass({
                 title: autoTitle,
                 gradeId: parseInt(formData.gradeId),
@@ -103,6 +108,56 @@ export const TeacherClassesPage = () => {
         } catch (error) {
             console.error('Failed to delete class', error);
             addToast('فشل حذف الحصة', 'error');
+        }
+    };
+
+    const handleStartClass = async (classId: number) => {
+        // Removed confirmation
+        try {
+            await teacherService.startClass(classId);
+            addToast('تم بدء الحصة بنجاح', 'success');
+            loadData();
+        } catch (error) {
+            console.error('Failed to start class', error);
+            addToast('فشل بدء الحصة', 'error');
+        }
+    };
+
+    const handleEndClass = async (classId: number) => {
+        // Removed confirmation
+        try {
+            await teacherService.endClass(classId);
+            addToast('تم إنهاء الحصة بنجاح', 'success');
+            loadData();
+        } catch (error) {
+            console.error('Failed to end class', error);
+            addToast('فشل إنهاء الحصة', 'error');
+        }
+    };
+
+    const handleOpenRecordingModal = (cls: ClassSessionResponse) => {
+        setSelectedClassForRecording(cls);
+        setRecordingUrl(cls.teamsRecordingUrl || '');
+        setIsRecordingModalOpen(true);
+    };
+
+    const handleSubmitRecording = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedClassForRecording) return;
+
+        setIsSubmitting(true);
+        try {
+            await teacherService.updateRecordingUrl(selectedClassForRecording.id, recordingUrl);
+            addToast('تم حفظ رابط التسجيل بنجاح', 'success');
+            loadData();
+            setIsRecordingModalOpen(false);
+            setRecordingUrl('');
+            setSelectedClassForRecording(null);
+        } catch (error) {
+            console.error('Failed to update recording url', error);
+            addToast('فشل حفظ رابط التسجيل', 'error');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -160,25 +215,28 @@ export const TeacherClassesPage = () => {
                             classes.map((cls) => (
                                 <motion.div key={cls.id} variants={itemVariants} layout>
                                     <Card className="hover:shadow-md transition-shadow relative">
-                                        <div className="absolute top-4 left-4 flex gap-2">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(cls.status)}`}>
-                                                {getStatusText(cls.status)}
-                                            </span>
-                                            <button 
-                                                onClick={() => handleDeleteClass(cls.id)}
-                                                className="text-red-400 hover:text-red-600"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                                <Video className="w-6 h-6" />
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                                                    <Video className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-gray-900">{cls.title}</h3>
+                                                    <p className="text-sm text-gray-500">{cls.subjectName} - {cls.gradeName}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="font-bold text-gray-900">{cls.title}</h3>
-                                                <p className="text-sm text-gray-500">{cls.subjectName} - {cls.gradeName}</p>
+
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(cls.status)}`}>
+                                                    {getStatusText(cls.status)}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleDeleteClass(cls.id)}
+                                                    className="text-red-400 hover:text-red-600 p-1"
+                                                    title="حذف الحصة"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </div>
                                         </div>
 
@@ -198,29 +256,35 @@ export const TeacherClassesPage = () => {
                                         </div>
 
                                         <div className="border-t border-gray-100 pt-4 flex gap-2">
-                                            {cls.teamsMeetingUrl ? (
-                                                <a
-                                                    href={cls.teamsMeetingUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex-1 bg-indigo-50 text-indigo-700 text-center py-2 rounded-lg font-bold text-sm hover:bg-indigo-100 transition-colors"
-                                                >
-                                                    انضمام
-                                                </a>
-                                            ) : (
-                                                <span className="flex-1 bg-gray-50 text-gray-400 text-center py-2 rounded-lg text-sm">
-                                                    لا يوجد رابط
-                                                </span>
+                                            {cls.status !== 'COMPLETED' && (
+                                                <>
+                                                    <Button
+                                                        onClick={() => handleStartClass(cls.id)}
+                                                        className={`flex-1 ${cls.status === 'LIVE' ? 'bg-green-100 text-green-700 hover:bg-green-100 cursor-default' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                                                        disabled={cls.status === 'LIVE'}
+                                                    >
+                                                        <Play className="w-4 h-4 ml-2" />
+                                                        {cls.status === 'LIVE' ? 'مباشر' : 'بدء الحصة'}
+                                                    </Button>
+
+                                                    <Button
+                                                        onClick={() => handleEndClass(cls.id)}
+                                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                                                    >
+                                                        <Square className="w-4 h-4 ml-2" />
+                                                        إنهاء
+                                                    </Button>
+                                                </>
                                             )}
-                                            {cls.teamsRecordingUrl && (
-                                                <a
-                                                    href={cls.teamsRecordingUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex-1 bg-gray-50 text-gray-700 text-center py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition-colors"
+
+                                            {cls.status === 'COMPLETED' && (
+                                                <Button
+                                                    onClick={() => handleOpenRecordingModal(cls)}
+                                                    className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
                                                 >
-                                                    التسجيل
-                                                </a>
+                                                    <Upload className="w-4 h-4 ml-2" />
+                                                    {cls.teamsRecordingUrl ? 'تعديل التسجيل' : 'رفع التسجيل'}
+                                                </Button>
                                             )}
                                         </div>
                                     </Card>
@@ -305,6 +369,51 @@ export const TeacherClassesPage = () => {
                                 <>
                                     <CheckCircle className="w-4 h-4 ml-2" />
                                     جدولة الحصة
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Upload Recording Modal */}
+            <Modal
+                isOpen={isRecordingModalOpen}
+                onClose={() => setIsRecordingModalOpen(false)}
+                title="إضافة رابط التسجيل"
+            >
+                <form onSubmit={handleSubmitRecording} className="space-y-4">
+                    {selectedClassForRecording && (
+                        <div className="bg-gray-50 p-4 rounded-lg mb-4 text-sm">
+                            <div className="flex justify-between mb-2">
+                                <span className="font-bold text-gray-700">عنوان الحصة:</span>
+                                <span>{selectedClassForRecording.title}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-bold text-gray-700">التاريخ:</span>
+                                <span>{new Date(selectedClassForRecording.scheduledTime).toLocaleDateString('ar-EG')}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <Input
+                        label="رابط التسجيل (Microsoft Teams / YouTube / Drive)"
+                        name="recordingUrl"
+                        placeholder="https://..."
+                        value={recordingUrl}
+                        onChange={(e) => setRecordingUrl(e.target.value)}
+                        required
+                    />
+
+                    <div className="flex justify-end gap-3 mt-6">
+                        <Button type="button" variant="secondary" onClick={() => setIsRecordingModalOpen(false)}>
+                            إلغاء
+                        </Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'جاري الحفظ...' : (
+                                <>
+                                    <CheckCircle className="w-4 h-4 ml-2" />
+                                    حفظ التسجيل
                                 </>
                             )}
                         </Button>

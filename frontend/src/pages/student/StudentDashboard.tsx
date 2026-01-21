@@ -182,22 +182,34 @@ export const StudentDashboard = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    {cls.teamsMeetingUrl ? (
+                                    {cls.status === 'COMPLETED' ? (
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg flex items-center gap-1">
+                                                <CheckCircle className="w-4 h-4" />
+                                                منتهية
+                                            </span>
+                                        </div>
+                                    ) : cls.teamsMeetingUrl ? (
                                         <a
                                             href={cls.teamsMeetingUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 focus:outline-none shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center gap-2"
+                                            className={`px-6 py-2.5 text-white text-sm font-bold rounded-lg shadow-md transition-all transform active:scale-95 flex items-center gap-2 ${cls.status === 'LIVE'
+                                                    ? 'bg-red-600 hover:bg-red-700 hover:shadow-lg animate-pulse'
+                                                    : 'bg-indigo-600 hover:bg-indigo-700'
+                                                }`}
                                         >
-                                            <span>انضمام</span>
-                                            <span className="relative flex h-3 w-3">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                            </span>
+                                            <span>{cls.status === 'LIVE' ? 'انضم الآن' : 'انضمام'}</span>
+                                            {cls.status === 'LIVE' && (
+                                                <span className="relative flex h-3 w-3">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                                                </span>
+                                            )}
                                         </a>
                                     ) : (
-                                        <span className="px-4 py-2 bg-gray-200 text-gray-600 text-sm font-medium rounded-lg">
-                                            {cls.status === 'COMPLETED' ? 'انتهت' : 'قريباً'}
+                                        <span className="px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium rounded-lg">
+                                            {cls.status === 'SCHEDULED' ? 'مجدولة' : 'قريباً'}
                                         </span>
                                     )}
                                 </motion.div>

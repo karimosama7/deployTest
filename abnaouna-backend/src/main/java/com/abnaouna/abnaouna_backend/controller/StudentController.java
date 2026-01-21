@@ -7,6 +7,7 @@ import com.abnaouna.abnaouna_backend.entity.User;
 import com.abnaouna.abnaouna_backend.repository.StudentRepository;
 import com.abnaouna.abnaouna_backend.repository.UserRepository;
 import com.abnaouna.abnaouna_backend.service.HomeworkService;
+import com.abnaouna.abnaouna_backend.service.AttendanceService;
 import com.abnaouna.abnaouna_backend.service.StudentDataService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StudentController {
 
+    private final AttendanceService attendanceService;
     private final HomeworkService homeworkService;
     private final StudentDataService studentDataService;
     private final StudentRepository studentRepository;
@@ -43,6 +45,15 @@ public class StudentController {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long studentId = getStudentId(userDetails);
         return ResponseEntity.ok(studentDataService.getSchedule(studentId));
+    }
+
+    @PostMapping("/sessions/{sessionId}/join")
+    public ResponseEntity<Void> joinSession(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long sessionId) {
+        Long studentId = getStudentId(userDetails);
+        attendanceService.recordAttendance(sessionId, studentId);
+        return ResponseEntity.ok().build();
     }
 
     // ==================== Homework ====================
@@ -88,4 +99,3 @@ public class StudentController {
         return ResponseEntity.ok(studentDataService.getAttendanceSummary(studentId));
     }
 }
-

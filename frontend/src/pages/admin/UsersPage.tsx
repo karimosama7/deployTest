@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
-import { Plus, UserPlus, Power, PowerOff, GraduationCap } from 'lucide-react';
+import { Plus, UserPlus, Power, PowerOff, GraduationCap, Key, Copy } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../../context/AuthContext';
@@ -32,6 +32,10 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
     const [users, setUsers] = useState<UserData[]>([]);
     const [grades, setGrades] = useState<Grade[]>([]);
     const [loading, setLoading] = useState(true);
+    // Password reset modal state
+    const [resetModalOpen, setResetModalOpen] = useState(false);
+    const [resetCreds, setResetCreds] = useState<{ username: string; password: string } | null>(null);
+    const [copiedReset, setCopiedReset] = useState(false);
 
     const getTitle = () => {
         switch (roleFilter) {
@@ -108,7 +112,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
         setSelectedParent(parent);
         setSelectedChildren([]); // Reset selection
         setLinkModalOpen(true);
-        
+
         // Fetch all students for selection
         setLoadingStudents(true);
         try {
@@ -127,7 +131,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
             addToast('الرجاء اختيار طالب واحد على الأقل', 'error');
             return;
         }
-        
+
         setSavingLink(true);
         try {
             await adminService.assignChildrenToParent(
@@ -157,6 +161,34 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                 console.error(err);
                 addToast('حدث خطأ أثناء تغيير حالة المستخدم', 'error');
             }
+        }
+    };
+
+    // Password reset handler
+    const handleResetPassword = async (user: UserData) => {
+        if (window.confirm(`هل أنت متأكد من إعادة تعيين كلمة مرور "${user.fullName}"؟`)) {
+            try {
+                const result = await adminService.resetPassword(Number(user.id));
+                setResetCreds({
+                    username: result.username,
+                    password: result.generatedPassword || 'N/A'
+                });
+                setResetModalOpen(true);
+                addToast('تم إعادة تعيين كلمة المرور', 'success');
+            } catch (err: any) {
+                console.error(err);
+                const msg = err.response?.data?.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور';
+                addToast(msg, 'error');
+            }
+        }
+    };
+
+    const copyResetCredentials = () => {
+        if (resetCreds) {
+            const text = `اسم المستخدم: ${resetCreds.username}\nكلمة المرور الجديدة: ${resetCreds.password}`;
+            navigator.clipboard.writeText(text);
+            setCopiedReset(true);
+            setTimeout(() => setCopiedReset(false), 2000);
         }
     };
 
@@ -286,8 +318,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                                     className={`
                                         inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                                         transition-all duration-200 border
-                                        ${user.isActive 
-                                            ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:border-red-300' 
+                                        ${user.isActive
+                                            ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:border-red-300'
                                             : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
                                         }
                                     `}
@@ -304,6 +336,14 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                                             <span>تفعيل</span>
                                         </>
                                     )}
+                                </button>
+                                {/* Reset Password Button */}
+                                <button
+                                    onClick={() => handleResetPassword(user)}
+                                    className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                    title="إعادة تعيين كلمة المرور"
+                                >
+                                    <Key className="h-4 w-4" />
                                 </button>
                             </div>
                         )}
@@ -339,19 +379,59 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                     )}
 
                     <div className="flex justify-end gap-3 pt-4">
-                        <Button 
-                            variant="secondary" 
+                        <Button
+                            variant="secondary"
                             onClick={() => setLinkModalOpen(false)}
                             disabled={savingLink}
                         >
                             إلغاء
                         </Button>
-                        <Button 
+                        <Button
                             onClick={submitLinkChildren}
                             disabled={savingLink || selectedChildren.length === 0}
                             className="bg-indigo-600 hover:bg-indigo-700"
                         >
                             {savingLink ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Password Reset Modal */}
+            <Modal
+                isOpen={resetModalOpen}
+                onClose={() => setResetModalOpen(false)}
+                title="بيانات تسجيل الدخول الجديدة"
+            >
+                <div className="space-y-4">
+                    <p className="text-gray-600 text-sm">
+                        تم إعادة تعيين كلمة المرور بنجاح. احفظ هذه البيانات لإرسالها للمستخدم:
+                    </p>
+
+                    {resetCreds && (
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-3 font-mono text-sm">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-500">اسم المستخدم:</span>
+                                <span className="font-bold text-gray-900">{resetCreds.username}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-500">كلمة المرور:</span>
+                                <span className="font-bold text-green-600">{resetCreds.password}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={copyResetCredentials}
+                            className="flex items-center gap-2"
+                        >
+                            <Copy className="w-4 h-4" />
+                            {copiedReset ? 'تم النسخ!' : 'نسخ البيانات'}
+                        </Button>
+                        <Button onClick={() => setResetModalOpen(false)}>
+                            إغلاق
                         </Button>
                     </div>
                 </div>

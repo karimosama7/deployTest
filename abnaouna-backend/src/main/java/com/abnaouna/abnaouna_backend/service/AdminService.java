@@ -30,7 +30,7 @@ public class AdminService {
         // Generate unique username and password
         String username = generateUsername(request.getFullName());
         String rawPassword = generatePassword();
-        
+
         // Create user entity
         User user = User.builder()
                 .username(username)
@@ -41,9 +41,9 @@ public class AdminService {
                 .role(request.getRole())
                 .isActive(false) // Admin activates after payment
                 .build();
-        
+
         user = userRepository.save(user);
-        
+
         // Create role-specific entity
         switch (request.getRole()) {
             case TEACHER:
@@ -59,7 +59,7 @@ public class AdminService {
                 // Admin doesn't need additional entity
                 break;
         }
-        
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -77,7 +77,8 @@ public class AdminService {
         Teacher teacher = Teacher.builder()
                 .user(user)
                 .build();
-        
+
+        // Handle subjects
         if (request.getSubjectIds() != null && request.getSubjectIds().length > 0) {
             if (request.getSubjectIds().length > 2) {
                 throw new RuntimeException("Teacher can have maximum 2 subjects");
@@ -90,7 +91,18 @@ public class AdminService {
             }
             teacher.setSubjects(subjects);
         }
-        
+
+        // Handle grades (classes)
+        if (request.getGradeIds() != null && request.getGradeIds().length > 0) {
+            Set<Grade> grades = new HashSet<>();
+            for (Long gradeId : request.getGradeIds()) {
+                Grade grade = gradeRepository.findById(gradeId)
+                        .orElseThrow(() -> new RuntimeException("Grade not found: " + gradeId));
+                grades.add(grade);
+            }
+            teacher.setGrades(grades);
+        }
+
         teacherRepository.save(teacher);
     }
 
@@ -98,19 +110,20 @@ public class AdminService {
         Student student = Student.builder()
                 .user(user)
                 .build();
-        
+
         if (request.getGradeId() != null) {
             Grade grade = gradeRepository.findById(request.getGradeId())
                     .orElseThrow(() -> new RuntimeException("Grade not found"));
             student.setGrade(grade);
         }
-        
+
         if (request.getParentId() != null) {
-            Parent parent = parentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new RuntimeException("Parent not found"));
+            // parentId from frontend is the User ID, not Parent entity ID
+            Parent parent = parentRepository.findByUserId(request.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent not found for user ID: " + request.getParentId()));
             student.setParent(parent);
         }
-        
+
         studentRepository.save(student);
     }
 
@@ -119,11 +132,12 @@ public class AdminService {
                 .user(user)
                 .build();
         parent = parentRepository.save(parent);
-        
+
         if (request.getChildrenIds() != null) {
             for (Long childId : request.getChildrenIds()) {
-                Student student = studentRepository.findById(childId)
-                        .orElseThrow(() -> new RuntimeException("Student not found: " + childId));
+                // childId from frontend is the User ID, not Student entity ID
+                Student student = studentRepository.findByUserId(childId)
+                        .orElseThrow(() -> new RuntimeException("Student not found for user ID: " + childId));
                 student.setParent(parent);
                 studentRepository.save(student);
             }
@@ -152,18 +166,18 @@ public class AdminService {
     public UserResponse updateUser(Long id, CreateUserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
-        
+
         userRepository.save(user);
-        
+
         // Update role-specific data
         if (user.getRole() == User.Role.TEACHER) {
             Teacher teacher = teacherRepository.findByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Teacher profile not found"));
-            
+
             // Update subjects
             if (request.getSubjectIds() != null) {
                 Set<Subject> subjects = new HashSet<>();
@@ -174,7 +188,7 @@ public class AdminService {
                 }
                 teacher.setSubjects(subjects);
             }
-            
+
             // Update grades
             if (request.getGradeIds() != null) {
                 Set<Grade> grades = new HashSet<>();
@@ -185,7 +199,7 @@ public class AdminService {
                 }
                 teacher.setGrades(grades);
             }
-            
+
             teacherRepository.save(teacher);
         } else if (user.getRole() == User.Role.STUDENT && request.getGradeId() != null) {
             Student student = studentRepository.findByUserId(user.getId())
@@ -195,7 +209,7 @@ public class AdminService {
             student.setGrade(grade);
             studentRepository.save(student);
         }
-        
+
         return mapToUserResponse(user);
     }
 
@@ -203,7 +217,7 @@ public class AdminService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         // Delete role-specific entity first
         switch (user.getRole()) {
             case TEACHER:
@@ -220,7 +234,7 @@ public class AdminService {
                 // Admin has no additional entity to delete
                 break;
         }
-        
+
         userRepository.delete(user);
     }
 
@@ -237,11 +251,11 @@ public class AdminService {
     public UserResponse resetPassword(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         String newPassword = generatePassword();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        
+
         UserResponse response = mapToUserResponse(user);
         response.setGeneratedPassword(newPassword);
         return response;
@@ -257,7 +271,7 @@ public class AdminService {
                 .role(user.getRole())
                 .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt());
-        
+
         // Add role-specific data
         if (user.getRole() == User.Role.TEACHER) {
             teacherRepository.findByUserId(user.getId()).ifPresent(teacher -> {
@@ -281,7 +295,7 @@ public class AdminService {
                 builder.childrenIds(childrenUserIds);
             });
         }
-        
+
         return builder.build();
     }
 
@@ -319,13 +333,15 @@ public class AdminService {
     // ==================== Student-Parent Linking ====================
 
     @Transactional
-    public void assignChildrenToParent(Long parentId, Long[] childIds) {
-        Parent parent = parentRepository.findById(parentId)
-                .orElseThrow(() -> new RuntimeException("Parent not found"));
-        
-        for (Long childId : childIds) {
-            Student student = studentRepository.findById(childId)
-                    .orElseThrow(() -> new RuntimeException("Student not found: " + childId));
+    public void assignChildrenToParent(Long parentUserId, Long[] childUserIds) {
+        // parentUserId is the User ID, not Parent entity ID
+        Parent parent = parentRepository.findByUserId(parentUserId)
+                .orElseThrow(() -> new RuntimeException("Parent not found for user ID: " + parentUserId));
+
+        for (Long childUserId : childUserIds) {
+            // childUserId is the User ID, not Student entity ID
+            Student student = studentRepository.findByUserId(childUserId)
+                    .orElseThrow(() -> new RuntimeException("Student not found for user ID: " + childUserId));
             student.setParent(parent);
             studentRepository.save(student);
         }
@@ -335,7 +351,7 @@ public class AdminService {
     public void removeChildFromParent(Long parentId, Long childId) {
         Student student = studentRepository.findById(childId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
-        
+
         if (student.getParent() != null && student.getParent().getId().equals(parentId)) {
             student.setParent(null);
             studentRepository.save(student);
@@ -346,22 +362,22 @@ public class AdminService {
 
     public List<UserResponse> searchStudents(String query, Long gradeId) {
         List<Student> students;
-        
+
         if (gradeId != null) {
             students = studentRepository.findByGradeId(gradeId);
         } else {
             students = studentRepository.findAll();
         }
-        
+
         // Filter by name if query provided
         if (query != null && !query.isEmpty()) {
             String lowerQuery = query.toLowerCase();
             students = students.stream()
-                    .filter(s -> s.getUser() != null && 
+                    .filter(s -> s.getUser() != null &&
                             s.getUser().getFullName().toLowerCase().contains(lowerQuery))
                     .collect(Collectors.toList());
         }
-        
+
         return students.stream()
                 .map(s -> mapToUserResponse(s.getUser()))
                 .collect(Collectors.toList());
@@ -372,14 +388,15 @@ public class AdminService {
     public StudentReportResponse getStudentReport(Long studentId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
-        
+
         // This would be enhanced with actual data from other repositories
         return StudentReportResponse.builder()
                 .studentId(student.getId())
                 .fullName(student.getUser() != null ? student.getUser().getFullName() : null)
                 .gradeName(student.getGrade() != null ? student.getGrade().getName() : null)
-                .parentName(student.getParent() != null && student.getParent().getUser() != null 
-                        ? student.getParent().getUser().getFullName() : null)
+                .parentName(student.getParent() != null && student.getParent().getUser() != null
+                        ? student.getParent().getUser().getFullName()
+                        : null)
                 .build();
     }
 }

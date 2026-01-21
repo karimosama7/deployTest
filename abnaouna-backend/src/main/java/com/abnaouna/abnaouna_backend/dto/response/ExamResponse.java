@@ -13,18 +13,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExamResponse {
-    
+
     private Long id;
     private String title;
     private String formUrl;
-    private LocalDate examDate;
+    private LocalDateTime examDate;
     private LocalDateTime createdAt;
-    
+
     // Related info
     private Long classSessionId;
     private String classTitle;
     private String subjectName;
-    
+
     // Stats
     private Integer totalStudents;
     private Integer gradedStudents;

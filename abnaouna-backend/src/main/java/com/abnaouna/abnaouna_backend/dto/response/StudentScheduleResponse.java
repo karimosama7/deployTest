@@ -20,4 +20,6 @@ public class StudentScheduleResponse {
     private String status;
     private String teamsMeetingUrl;
     private String teamsRecordingUrl;
+    private Long studentId;
+    private String studentName;
 }

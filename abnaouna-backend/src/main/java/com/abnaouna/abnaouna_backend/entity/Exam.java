@@ -20,8 +20,20 @@ public class Exam {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "class_id", nullable = false)
+    @JoinColumn(name = "class_id") // Made nullable
     private ClassSession classSession;
+
+    @ManyToOne
+    @JoinColumn(name = "teacher_id") // Add owner
+    private Teacher teacher;
+
+    @ManyToOne
+    @JoinColumn(name = "grade_id")
+    private Grade grade;
+
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
 
     @Column(nullable = false)
     private String title;
@@ -30,7 +42,7 @@ public class Exam {
     private String formUrl; // Google Form link
 
     @Column(name = "exam_date", nullable = false)
-    private LocalDate examDate;
+    private LocalDateTime examDate;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -45,4 +57,3 @@ public class Exam {
         createdAt = LocalDateTime.now();
     }
 }
-

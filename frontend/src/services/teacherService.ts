@@ -48,6 +48,14 @@ export const teacherService = {
         const response = await api.put(`/teacher/classes/${id}/recording-url`, { recordingUrl });
         return response.data;
     },
+    startClass: async (id: number): Promise<ClassSessionResponse> => {
+        const response = await api.post(`/teacher/classes/${id}/start`);
+        return response.data;
+    },
+    endClass: async (id: number): Promise<ClassSessionResponse> => {
+        const response = await api.post(`/teacher/classes/${id}/end`);
+        return response.data;
+    },
 
     // Attendance
     getEnrolledStudents: async (classId: number): Promise<any[]> => {
@@ -91,6 +99,10 @@ export const teacherService = {
     // Exams
     getClassExams: async (classId: number): Promise<ExamResponse[]> => {
         const response = await api.get(`/teacher/classes/${classId}/exams`);
+        return response.data;
+    },
+    getMyExams: async (): Promise<ExamResponse[]> => {
+        const response = await api.get('/teacher/exams');
         return response.data;
     },
     createExam: async (data: ExamRequest): Promise<ExamResponse> => {

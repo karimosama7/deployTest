@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, FileText, BarChart2, Plus, Calendar, Clock, Loader } from 'lucide-react';
+import { Users, BookOpen, FileText, BarChart2, Plus, Calendar, Clock, Loader, Play, Square, CheckCircle } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { useAuth } from '../../context/AuthContext';
 import { teacherService } from '../../services/teacherService';
@@ -14,6 +14,8 @@ export const TeacherDashboard = () => {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<ClassSessionResponse[]>([]);
+
+  // Recording Modal State removed as requested for Dashboard
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,6 +32,41 @@ export const TeacherDashboard = () => {
 
     fetchData();
   }, [addToast]);
+
+  const loadData = async () => {
+    try {
+      const classData = await teacherService.getClasses();
+      setClasses(classData);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error);
+    }
+  };
+
+  const handleStartClass = async (classId: number) => {
+    // Removed confirmation as requested
+    try {
+      await teacherService.startClass(classId);
+      addToast('تم بدء الحصة بنجاح', 'success');
+      loadData();
+    } catch (error) {
+      console.error('Failed to start class', error);
+      addToast('فشل بدء الحصة', 'error');
+    }
+  };
+
+  const handleEndClass = async (classId: number) => {
+    // Removed confirmation as requested
+    try {
+      await teacherService.endClass(classId);
+      addToast('تم إنهاء الحصة بنجاح', 'success');
+      loadData();
+    } catch (error) {
+      console.error('Failed to end class', error);
+      addToast('فشل إنهاء الحصة', 'error');
+    }
+  };
+
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -142,13 +179,34 @@ export const TeacherDashboard = () => {
                       <p className="text-gray-500">{item.title}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => window.open(item.teamsMeetingUrl, '_blank')}
-                    disabled={!item.teamsMeetingUrl}
-                    className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg font-medium hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    بدء الحصة
-                  </button>
+                  <div className="flex gap-2">
+                    {/* Only show Start/End buttons if NOT Completed */}
+                    {item.status !== 'COMPLETED' ? (
+                      <>
+                        <button
+                          onClick={() => handleStartClass(item.id)}
+                          className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1 ${item.status === 'LIVE' ? 'bg-green-100 text-green-700 cursor-default' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                          disabled={item.status === 'LIVE'}
+                        >
+                          <Play className="w-4 h-4" />
+                          {item.status === 'LIVE' ? 'مباشر' : 'بدء'}
+                        </button>
+
+                        <button
+                          onClick={() => handleEndClass(item.id)}
+                          className="px-3 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-1"
+                        >
+                          <Square className="w-4 h-4" />
+                          إنهاء
+                        </button>
+                      </>
+                    ) : (
+                      <div className="px-3 py-2 bg-gray-100 text-gray-500 rounded-lg flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>منتهية</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}
