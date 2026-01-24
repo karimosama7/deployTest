@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,9 +20,16 @@ public class ExamResponse {
     private LocalDateTime createdAt;
 
     // Related info
-    private Long classSessionId;
-    private String classTitle;
+    // Related info
+    private Long classSessionId; // kept for legacy if needed, or null
+    private String classTitle; // Comma separated for multiple
     private String subjectName;
+
+    private Integer durationMinutes;
+    private Integer totalMarks;
+    private Integer passingScore;
+    private String resultConfiguration;
+    private LocalDateTime endDate;
 
     // Stats
     private Integer totalStudents;

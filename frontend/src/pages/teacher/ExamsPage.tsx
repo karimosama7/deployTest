@@ -3,29 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Plus, Calendar, CheckCircle, Clock, MoreVertical, AlertTriangle, ExternalLink, BarChart2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { Modal } from '../../components/common/Modal';
-import { Input } from '../../components/common/Input';
-import { ExamResponse, Grade, Subject } from '../../types/api';
+import { ExamResponse } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
 import { useToast } from '../../context/ToastContext';
 
 export const TeacherExamsPage = () => {
     const [examsList, setExamsList] = useState<ExamResponse[]>([]);
-    const [grades, setGrades] = useState<Grade[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const { addToast } = useToast();
-
-    const [formData, setFormData] = useState({
-        title: '',
-        gradeId: '',
-        subjectId: '',
-        date: '',
-        time: '',
-        formLink: ''
-    });
 
     useEffect(() => {
         loadExams();
@@ -33,16 +18,11 @@ export const TeacherExamsPage = () => {
 
     const loadExams = async () => {
         try {
-            const [examsData, gradesData, subjectsData] = await Promise.all([
-                teacherService.getMyExams(),
-                teacherService.getMyGrades(),
-                teacherService.getMySubjects()
-            ]);
+            const examsData = await teacherService.getMyExams();
             setExamsList(examsData);
-            setGrades(gradesData);
-            setSubjects(subjectsData);
         } catch (error) {
             console.error('Failed to load exams', error);
+            addToast('فشل تحميل الاختبارات', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -65,31 +45,6 @@ export const TeacherExamsPage = () => {
         }
     };
 
-    const handleCreateExam = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            await teacherService.createExam({
-                title: formData.title,
-                gradeId: parseInt(formData.gradeId),
-                subjectId: parseInt(formData.subjectId),
-                examDate: `${formData.date}T${formData.time}:00`, // Combine Date + Time + Seconds
-                formUrl: formData.formLink
-            });
-            // Reload to refresh list
-            addToast('تم إنشاء الاختبار بنجاح', 'success');
-            loadExams();
-            setIsCreateModalOpen(false);
-            setFormData({ title: '', gradeId: '', subjectId: '', date: '', time: '', formLink: '' });
-        } catch (error: any) {
-            console.error('Failed to create exam', error);
-            const errorMessage = error.response?.data?.message || 'فشل إنشاء الاختبار. تأكد من ملء جميع الحقول بشكل صحيح';
-            addToast(errorMessage, 'error');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
     return (
         <motion.div
             className="space-y-6"
@@ -102,7 +57,7 @@ export const TeacherExamsPage = () => {
                     <h1 className="text-2xl font-bold text-gray-900">إدارة الاختبارات</h1>
                     <p className="mt-1 text-gray-500">إنشاء ومتابعة الاختبارات والتقييمات</p>
                 </div>
-                <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Button onClick={() => window.location.href = '/teacher/exams/new'}>
                     <Plus className="w-5 h-5 ml-2" />
                     اختبار جديد
                 </Button>
@@ -161,15 +116,57 @@ export const TeacherExamsPage = () => {
                                                     </div>
 
                                                     <div className="flex gap-2 w-full justify-end">
-                                                        <a
-                                                            href={exam.formUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                                        {exam.formUrl ? (
+                                                            <a
+                                                                href={exam.formUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                                            >
+                                                                <ExternalLink className="w-4 h-4" />
+                                                                معاينة النموذج
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-sm text-gray-500">اختبار داخلي</span>
+                                                        )}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={async () => {
+                                                                const defaultDate = new Date();
+                                                                defaultDate.setMinutes(defaultDate.getMinutes() + 10); // Default to 10 mins from now
+                                                                // Simple ISO format for default value: YYYY-MM-DDTHH:mm
+                                                                const defaultStr = defaultDate.toISOString().slice(0, 16);
+
+                                                                // PROMPT user (Simple "One Button" + Date approach)
+                                                                // In a real app, use a Modal, but prompt is strictly 1 step.
+                                                                // Actually, let's just make a new one with "Now" date instantly? 
+                                                                // No, that's dangerous if they are not ready.
+                                                                // The user asked for "One Button" -> "Repost".
+                                                                // Let's assume "Repost" means "Create copy for NOW".
+                                                                // Or prompt for date. Prompt is safer.
+
+                                                                // Using a custom confirm/date logic would be better but requires more UI code.
+                                                                // Let's use window.prompt for the date.
+                                                                const newDateStr = window.prompt("Enter start date (YYYY-MM-DDTHH:mm):", defaultStr);
+                                                                if (newDateStr) {
+                                                                    try {
+                                                                        await teacherService.duplicateExam(exam.id, new Date(newDateStr).toISOString());
+                                                                        addToast("Exam duplicated successfully", 'success');
+                                                                        loadExams();
+                                                                    } catch (e) {
+                                                                        addToast("Failed to duplicate exam", 'error');
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="text-indigo-600 hover:text-indigo-800"
+                                                            title="Repost Exam"
                                                         >
-                                                            <ExternalLink className="w-4 h-4" />
-                                                            معاينة النموذج
-                                                        </a>
+                                                            <div className="flex items-center gap-1">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 4 14 2 14 11 22 21 12 23 12 18 2"></polyline></svg>
+                                                                <span className="text-xs">Repost</span>
+                                                            </div>
+                                                        </Button>
                                                         <button className="text-gray-400 hover:text-gray-600 p-1">
                                                             <MoreVertical className="w-5 h-5" />
                                                         </button>
@@ -188,92 +185,6 @@ export const TeacherExamsPage = () => {
                     </AnimatePresence>
                 </div>
             )}
-
-            {/* Create Exam Modal */}
-            <Modal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                title="إضافة اختبار جديد"
-            >
-                <form onSubmit={handleCreateExam} className="space-y-4">
-                    <Input
-                        label="عنوان الاختبار"
-                        required
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">الصف الدراسي</label>
-                            <select
-                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                value={formData.gradeId}
-                                onChange={(e) => setFormData({ ...formData, gradeId: e.target.value })}
-                                required
-                            >
-                                <option value="">اختر الصف...</option>
-                                {grades.map(g => (
-                                    <option key={g.id} value={g.id}>{g.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">المادة</label>
-                            <select
-                                className="w-full rounded-md border border-gray-300 px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                value={formData.subjectId}
-                                onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
-                                required
-                            >
-                                <option value="">اختر المادة...</option>
-                                {subjects.map(s => (
-                                    <option key={s.id} value={s.id}>{s.nameAr}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input
-                            label="تاريخ الاختبار"
-                            type="date"
-                            required
-                            value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        />
-                        <Input
-                            label="وقت الاختبار"
-                            type="time"
-                            required
-                            value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                        />
-                    </div>
-
-                    <Input
-                        label="رابط Google Form للاختبار"
-                        placeholder="https://docs.google.com/forms/..."
-                        required
-                        value={formData.formLink}
-                        onChange={(e) => setFormData({ ...formData, formLink: e.target.value })}
-                    />
-
-                    <div className="flex justify-end gap-3 mt-6">
-                        <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
-                            إلغاء
-                        </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'جاري الحفظ...' : (
-                                <>
-                                    <CheckCircle className="w-4 h-4 ml-2" />
-                                    نشر الاختبار
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
         </motion.div>
     );
 };

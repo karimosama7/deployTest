@@ -250,4 +250,15 @@ public class TeacherController {
             @Valid @RequestBody ExamGradeRequest request) {
         return ResponseEntity.ok(examService.enterGrades(id, request.getStudentGrades()));
     }
+
+    @PostMapping("/exams/{id}/duplicate")
+    public ResponseEntity<ExamResponse> duplicateExam(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        Long teacherId = getTeacherId(userDetails);
+        String dateStr = body.get("newDate"); // ISO Format expected
+        java.time.LocalDateTime newDate = java.time.LocalDateTime.parse(dateStr);
+        return ResponseEntity.ok(examService.duplicateExam(id, teacherId, newDate));
+    }
 }

@@ -19,9 +19,10 @@ public class Exam {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "class_id") // Made nullable
-    private ClassSession classSession;
+    @ManyToMany
+    @JoinTable(name = "exam_classes", joinColumns = @JoinColumn(name = "exam_id"), inverseJoinColumns = @JoinColumn(name = "class_id"))
+    @Builder.Default
+    private List<ClassSession> classSessions = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "teacher_id") // Add owner
@@ -46,6 +47,27 @@ public class Exam {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Column(name = "total_marks")
+    private Integer totalMarks;
+
+    @Column(name = "passing_score")
+    private Integer passingScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "result_config")
+    @Builder.Default
+    private ExamResultConfig resultConfiguration = ExamResultConfig.MANUAL;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean published = false;
+
+    @Column(name = "end_date")
+    private LocalDateTime endDate;
 
     // Cascade delete for exam results
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)

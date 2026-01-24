@@ -2,6 +2,8 @@ package com.abnaouna.abnaouna_backend.controller;
 
 import com.abnaouna.abnaouna_backend.dto.request.HomeworkSubmissionRequest;
 import com.abnaouna.abnaouna_backend.dto.response.*;
+import com.abnaouna.abnaouna_backend.service.ExamService;
+import com.abnaouna.abnaouna_backend.dto.response.StudentExamResultResponse;
 import com.abnaouna.abnaouna_backend.entity.Student;
 import com.abnaouna.abnaouna_backend.entity.User;
 import com.abnaouna.abnaouna_backend.repository.StudentRepository;
@@ -24,6 +26,7 @@ import java.util.List;
 public class StudentController {
 
     private final AttendanceService attendanceService;
+    private final ExamService examService;
     private final HomeworkService homeworkService;
     private final StudentDataService studentDataService;
     private final StudentRepository studentRepository;
@@ -81,6 +84,21 @@ public class StudentController {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long studentId = getStudentId(userDetails);
         return ResponseEntity.ok(studentDataService.getExams(studentId));
+    }
+
+    @PostMapping("/exams/{examId}/start")
+    public ResponseEntity<StudentExamExecutionResponse> startExam(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long examId) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(examService.startExam(studentId, examId));
+    }
+
+    @PostMapping("/exams/submit/{executionId}")
+    public ResponseEntity<StudentExamResultResponse> submitExam(
+            @PathVariable Long executionId,
+            @RequestBody java.util.Map<Long, Long> answers) {
+        return ResponseEntity.ok(examService.submitExam(executionId, answers));
     }
 
     // ==================== Attendance ====================

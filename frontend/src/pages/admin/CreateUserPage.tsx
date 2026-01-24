@@ -361,8 +361,8 @@ export const CreateUserPage = () => {
                         {/* Parent Specific Fields */}
                         {role === 'PARENT' && (
                             <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
                                 className="col-span-2 grid grid-cols-1 gap-6 border-t pt-6 mt-2"
                             >
                                 <div>

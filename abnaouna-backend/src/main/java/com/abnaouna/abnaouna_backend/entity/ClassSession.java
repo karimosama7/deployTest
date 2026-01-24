@@ -53,7 +53,7 @@ public class ClassSession {
     private LocalDateTime createdAt;
 
     // Cascade delete relationships
-    @OneToMany(mappedBy = "classSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany(mappedBy = "classSessions")
     @Builder.Default
     private List<Exam> exams = new ArrayList<>();
 
@@ -74,4 +74,3 @@ public class ClassSession {
         SCHEDULED, LIVE, COMPLETED
     }
 }
-

@@ -113,8 +113,13 @@ export const teacherService = {
         const response = await api.put(`/teacher/exams/${id}`, data);
         return response.data;
     },
-    deleteExam: async (id: number): Promise<void> => {
-        await api.delete(`/teacher/exams/${id}`);
+    deleteExam: async (examId: number) => {
+        await api.delete(`/teacher/exams/${examId}`);
+    },
+
+    duplicateExam: async (examId: number, newDate: string) => {
+        const response = await api.post<ExamResponse>(`/teacher/exams/${examId}/duplicate`, { newDate });
+        return response.data;
     },
     getExamResults: async (examId: number): Promise<ExamResultResponse[]> => {
         const response = await api.get(`/teacher/exams/${examId}/results`);

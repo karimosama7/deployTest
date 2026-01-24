@@ -9,12 +9,12 @@ import java.util.List;
 @Repository
 public interface ExamRepository extends JpaRepository<Exam, Long> {
 
-    List<Exam> findByClassSession(ClassSession classSession);
+    // List<Exam> findByClassSession(ClassSession classSession); // Removed
 
-    List<Exam> findByClassSessionId(Long classSessionId);
+    List<Exam> findByClassSessions_Id(Long classSessionId);
 
     // Sorted queries
-    List<Exam> findByClassSessionIdOrderByExamDateDesc(Long classSessionId);
+    List<Exam> findByClassSessions_IdOrderByExamDateDesc(Long classSessionId);
 
     // New query for grade-based exams
     List<Exam> findByGradeIdOrderByExamDateDesc(Long gradeId);

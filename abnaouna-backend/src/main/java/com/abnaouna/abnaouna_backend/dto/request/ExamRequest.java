@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -30,4 +31,42 @@ public class ExamRequest {
     @NotNull(message = "Exam date is required")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime examDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime endDate;
+
+    private Integer durationMinutes;
+    private Integer totalMarks;
+    private Integer passingScore;
+    private String resultConfiguration; // Enum string
+    private boolean published;
+
+    private List<Long> classSessionIds;
+
+    private List<QuestionRequest> questions;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class QuestionRequest {
+        @NotBlank(message = "Question text is required")
+        private String text;
+        private String imageUrl;
+        private Integer marks;
+        private String questionType; // MCQ
+        private Integer sortOrder;
+        private List<OptionRequest> options;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OptionRequest {
+        @NotBlank(message = "Option text is required")
+        private String text;
+        private String imageUrl;
+        private boolean isCorrect;
+    }
 }

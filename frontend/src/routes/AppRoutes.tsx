@@ -10,6 +10,8 @@ import { StudentDashboard } from '../pages/student/StudentDashboard';
 import { ClassesPage } from '../pages/student/ClassesPage';
 import { HomeworkPage } from '../pages/student/HomeworkPage';
 import { ExamsPage } from '../pages/student/ExamsPage';
+import { ExamTakerPage } from '../pages/student/ExamTakerPage';
+import { ExamResultPage } from '../pages/student/ExamResultPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { CreateUserPage } from '../pages/admin/CreateUserPage';
 import { StudentReportPage } from '../pages/admin/StudentReportPage';
@@ -19,6 +21,7 @@ import { TeacherDashboard } from '../pages/teacher/TeacherDashboard';
 import { TeacherClassesPage } from '../pages/teacher/ClassesPage';
 import { TeacherHomeworkPage } from '../pages/teacher/HomeworkPage';
 import { TeacherExamsPage } from '../pages/teacher/ExamsPage';
+import { TeacherExamEditor } from '../pages/teacher/TeacherExamEditor';
 import { ParentLayout } from '../components/layout/ParentLayout';
 import { ParentDashboard } from '../pages/parent/ParentDashboard';
 import { ParentChildrenPage } from '../pages/parent/ParentChildrenPage';
@@ -67,12 +70,14 @@ export const AppRoutes = () => {
 
             {/* Student Routes */}
             <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
-                <Route path="/student" element={<StudentLayout />}>
+                <Route path="student" element={<StudentLayout />}>
                     <Route index element={<StudentDashboard />} />
                     <Route path="classes" element={<ClassesPage />} />
                     <Route path="homework" element={<HomeworkPage />} />
                     <Route path="exams" element={<ExamsPage />} />
                 </Route>
+                <Route path="/student/exam/:examId/take" element={<ExamTakerPage />} />
+                <Route path="/student/exam/:examId/result" element={<ExamResultPage />} />
             </Route>
 
             {/* Admin Routes */}
@@ -96,6 +101,7 @@ export const AppRoutes = () => {
                     <Route path="classes" element={<TeacherClassesPage />} />
                     <Route path="homework" element={<TeacherHomeworkPage />} />
                     <Route path="exams" element={<TeacherExamsPage />} />
+                    <Route path="exams/new" element={<TeacherExamEditor />} />
                 </Route>
             </Route>
 

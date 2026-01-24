@@ -121,7 +121,7 @@ public class StudentDataService {
                 List<StudentExamResponse> result = new ArrayList<>();
 
                 for (ClassSession cls : classes) {
-                        List<Exam> exams = examRepository.findByClassSessionId(cls.getId());
+                        List<Exam> exams = examRepository.findByClassSessions_Id(cls.getId());
 
                         for (Exam exam : exams) {
                                 Optional<ExamResult> examResult = examResultRepository

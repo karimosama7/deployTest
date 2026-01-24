@@ -101,12 +101,34 @@ export interface HomeworkSubmissionResponse {
 
 // ==================== Exams ====================
 
+export interface ExamOptionRequest {
+    text: string;
+    imageUrl?: string;
+    isCorrect: boolean;
+}
+
+export interface ExamQuestionRequest {
+    text: string;
+    imageUrl?: string;
+    marks: number;
+    questionType: 'MCQ';
+    choices: ExamOptionRequest[];
+    sortOrder?: number;
+}
+
 export interface ExamRequest {
-    gradeId: number;
     subjectId: number;
+    gradeId: number;
     title: string;
-    formUrl?: string;
+    durationMinutes: number;
+    totalMarks: number;
+    passingScore: number;
+    resultConfiguration: 'IMMEDIATE' | 'AFTER_DATE' | 'MANUAL';
+    published?: boolean;
     examDate: string; // "YYYY-MM-DDTHH:mm:ss"
+    endDate?: string;
+    classSessionIds: number[];
+    questions?: ExamQuestionRequest[];
 }
 
 export interface ExamResponse {
@@ -128,13 +150,54 @@ export interface ExamGradeRequest {
     studentGrades: Record<number, number>; // { studentId: grade }
 }
 
+// Student Execution Types
+export interface StudentExamExecutionResponse {
+    executionId: number;
+    examId: number;
+    title: string;
+    durationMinutes: number;
+    totalMarks: number;
+    startedAt: string;
+    endDate?: string;
+    questions: QuestionResponse[];
+    remainingSeconds?: number; // Calculated on frontend or backend
+}
+
+export interface QuestionResponse {
+    id: number;
+    text: string;
+    imageUrl?: string;
+    marks: number;
+    questionType: 'MCQ';
+    sortOrder: number;
+    options: OptionResponse[];
+}
+
+export interface OptionResponse {
+    id: number;
+    text: string;
+    imageUrl?: string;
+}
+
+export interface StudentExamResultResponse {
+    executionId: number;
+    examId: number;
+    title: string;
+    score: number;
+    totalMarks: number;
+    submittedAt: string;
+    status: string;
+    feedback?: string;
+}
+
 export interface ExamResultResponse {
     id: number;
     examId: number;
     examTitle: string;
     studentId: number;
     studentName: string;
-    grade?: number;
+    grade?: number; // mapped to score
+    score?: number;
     status: 'PENDING' | 'COMPLETED' | 'LATE' | 'FAILED';
     submittedAt?: string;
     gradedAt?: string;

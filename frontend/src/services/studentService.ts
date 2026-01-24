@@ -5,7 +5,9 @@ import {
     StudentHomeworkResponse,
     StudentExamResponse,
     StudentAttendanceResponse,
-    AttendanceSummary
+    AttendanceSummary,
+    StudentExamExecutionResponse,
+    StudentExamResultResponse
 } from '../types/api';
 
 export const studentService = {
@@ -31,6 +33,14 @@ export const studentService = {
     // Exams
     getExams: async (): Promise<StudentExamResponse[]> => {
         const response = await api.get('/student/exams');
+        return response.data;
+    },
+    startExam: async (examId: number): Promise<StudentExamExecutionResponse> => {
+        const response = await api.post(`/student/exams/${examId}/start`);
+        return response.data;
+    },
+    submitExam: async (executionId: number, answers: Record<number, number>): Promise<StudentExamResultResponse> => {
+        const response = await api.post(`/student/exams/submit/${executionId}`, answers);
         return response.data;
     },
 

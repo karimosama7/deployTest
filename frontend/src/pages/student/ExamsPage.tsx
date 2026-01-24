@@ -91,7 +91,10 @@ export const ExamsPage = () => {
     };
 
     const isUpcoming = (exam: StudentExamResponse) => {
-        return exam.status === 'UPCOMING' || (new Date(exam.examDate) > new Date() && !exam.grade);
+        // Show in "Upcoming/Active" if:
+        // 1. Status is explicitly UPCOMING
+        // 2. OR Status is PENDING (meaning not completed/failed/late) and no grade yet.
+        return exam.status === 'UPCOMING' || exam.status === 'PENDING';
     };
 
     const isPast = (exam: StudentExamResponse) => {
@@ -166,7 +169,7 @@ export const ExamsPage = () => {
 
                                 <div className="flex items-center gap-3">
                                     <StatusBadge status={exam.status} />
-                                    {exam.formUrl && (
+                                    {exam.formUrl ? (
                                         <Button
                                             onClick={() => window.open(exam.formUrl, '_blank')}
                                             disabled={new Date(exam.examDate) > new Date()}
@@ -176,6 +179,16 @@ export const ExamsPage = () => {
                                         >
                                             <ExternalLink className="w-4 h-4 ml-2" />
                                             {new Date(exam.examDate) > new Date() ? 'لم يحن الوقت' : 'ابدأ الاختبار'}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            onClick={() => window.location.href = `/student/exam/${exam.id}/take`}
+                                            disabled={new Date(exam.examDate) > new Date()}
+                                            className={`${new Date(exam.examDate) > new Date()
+                                                ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
+                                        >
+                                            {new Date(exam.examDate) > new Date() ? 'لم يحن الوقت' : 'ابدأ الاختبار (داخلي)'}
                                         </Button>
                                     )}
                                 </div>
@@ -215,7 +228,16 @@ export const ExamsPage = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <StatusBadge status={exam.status} grade={exam.grade} />
+                                <div className="flex items-center gap-3">
+                                    <StatusBadge status={exam.status} grade={exam.grade} />
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => window.location.href = `/student/exam/${exam.id}/result`}
+                                    >
+                                        التفاصيل
+                                    </Button>
+                                </div>
                             </div>
                         </Card>
                     ))}
