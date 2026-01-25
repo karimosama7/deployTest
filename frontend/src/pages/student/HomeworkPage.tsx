@@ -25,8 +25,8 @@ export const HomeworkPage = () => {
     const fetchHomework = async () => {
         try {
             const data = await studentService.getHomework();
-            // Sort by due date (closest first)
-            data.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+            // Sort by due date (newest/furthest first)
+            data.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
             setHomework(data);
         } catch (error) {
             console.error('Failed to fetch homework', error);

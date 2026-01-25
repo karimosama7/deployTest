@@ -11,18 +11,21 @@ import java.util.Optional;
 
 @Repository
 public interface StudentRepository extends JpaRepository<Student, Long> {
-    
+
     Optional<Student> findByUser(User user);
-    
+
     Optional<Student> findByUserId(Long userId);
-    
+
     List<Student> findByGrade(Grade grade);
-    
+
     List<Student> findByGradeId(Long gradeId);
-    
+
     List<Student> findByParent(Parent parent);
-    
+
     List<Student> findByParentId(Long parentId);
-    
+
     long countByGradeId(Long gradeId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT s.id) FROM Student s WHERE s.grade.id IN (SELECT cs.grade.id FROM ClassSession cs WHERE cs.teacher.id = :teacherId)")
+    long countDistinctStudentsByTeacherId(Long teacherId);
 }

@@ -24,4 +24,29 @@ public class Parent {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     @Builder.Default
     private List<Student> children = new ArrayList<>();
+
+    // Manual Getters/Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public List<Student> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<Student> children) {
+        this.children = children;
+    }
 }

@@ -86,11 +86,25 @@ export const TeacherDashboard = () => {
   };
 
   // Compute Stats (Real + Placeholder for missing APIs)
+  const [statsData, setStatsData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await teacherService.getDashboardStats();
+        setStatsData(data);
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const stats = [
-    { label: 'إجمالي الفصول', value: classes.length.toString(), icon: BookOpen, color: 'bg-indigo-100 text-indigo-600', link: '/teacher/classes' },
-    { label: 'إجمالي الطلاب', value: '-', icon: Users, color: 'bg-blue-100 text-blue-600', link: '/teacher/students' }, // No API for total distinct students yet
-    { label: 'واجبات جديدة', value: '-', icon: FileText, color: 'bg-yellow-100 text-yellow-600', link: '/teacher/homework' }, // No API for global homework stats
-    { label: 'تصحيح معلق', value: '-', icon: BarChart2, color: 'bg-red-100 text-red-600', link: '/teacher/exams' }, // No API for pending exams
+    { label: 'إجمالي الفصول', value: statsData?.totalClasses?.toString() || classes.length.toString(), icon: BookOpen, color: 'bg-indigo-100 text-indigo-600', link: '/teacher/classes' },
+    { label: 'إجمالي الطلاب', value: statsData?.totalStudents?.toString() || '-', icon: Users, color: 'bg-blue-100 text-blue-600', link: '/teacher/students' },
+    { label: 'واجبات جديدة', value: statsData?.activeHomework?.toString() || '-', icon: FileText, color: 'bg-yellow-100 text-yellow-600', link: '/teacher/homework' },
+    { label: 'تصحيح معلق', value: statsData?.pendingGrading?.toString() || '-', icon: BarChart2, color: 'bg-red-100 text-red-600', link: '/teacher/exams' },
   ];
 
   // Filter Today's Classes

@@ -129,49 +129,12 @@ export const TeacherExamsPage = () => {
                                                         ) : (
                                                             <span className="text-sm text-gray-500">اختبار داخلي</span>
                                                         )}
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={async () => {
-                                                                const defaultDate = new Date();
-                                                                defaultDate.setMinutes(defaultDate.getMinutes() + 10); // Default to 10 mins from now
-                                                                // Simple ISO format for default value: YYYY-MM-DDTHH:mm
-                                                                const defaultStr = defaultDate.toISOString().slice(0, 16);
-
-                                                                // PROMPT user (Simple "One Button" + Date approach)
-                                                                // In a real app, use a Modal, but prompt is strictly 1 step.
-                                                                // Actually, let's just make a new one with "Now" date instantly? 
-                                                                // No, that's dangerous if they are not ready.
-                                                                // The user asked for "One Button" -> "Repost".
-                                                                // Let's assume "Repost" means "Create copy for NOW".
-                                                                // Or prompt for date. Prompt is safer.
-
-                                                                // Using a custom confirm/date logic would be better but requires more UI code.
-                                                                // Let's use window.prompt for the date.
-                                                                const newDateStr = window.prompt("Enter start date (YYYY-MM-DDTHH:mm):", defaultStr);
-                                                                if (newDateStr) {
-                                                                    try {
-                                                                        await teacherService.duplicateExam(exam.id, new Date(newDateStr).toISOString());
-                                                                        addToast("Exam duplicated successfully", 'success');
-                                                                        loadExams();
-                                                                    } catch (e) {
-                                                                        addToast("Failed to duplicate exam", 'error');
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                            title="Repost Exam"
-                                                        >
-                                                            <div className="flex items-center gap-1">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 4 14 2 14 11 22 21 12 23 12 18 2"></polyline></svg>
-                                                                <span className="text-xs">Repost</span>
-                                                            </div>
-                                                        </Button>
-                                                        <button className="text-gray-400 hover:text-gray-600 p-1">
-                                                            <MoreVertical className="w-5 h-5" />
-                                                        </button>
                                                     </div>
-                                                    <Button variant="secondary" className="w-full text-xs h-9">
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="w-full text-xs h-9"
+                                                        onClick={() => window.location.href = `/teacher/exams/${exam.id}/results`}
+                                                    >
                                                         <BarChart2 className="w-4 h-4 ml-2" />
                                                         نتائج الطلاب
                                                     </Button>

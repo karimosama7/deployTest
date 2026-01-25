@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -520,6 +521,7 @@ public class ExamService {
                 .studentId(result.getStudent().getId())
                 .studentName(result.getStudent().getUser().getFullName())
                 .grade(result.getGrade())
+                .totalMarks(result.getExam().getTotalMarks())
                 .status(result.getStatus())
                 .submittedAt(result.getSubmittedAt())
                 .gradedAt(result.getGradedAt())
@@ -589,5 +591,69 @@ public class ExamService {
         initializeResultsForExam(newExam.getId());
 
         return mapToResponse(newExam);
+    }
+
+    public com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse getStudentExamResultDetails(
+            Long executionId, Long studentId) {
+        StudentExamExecution execution = executionRepository.findById(executionId)
+                .orElseThrow(() -> new RuntimeException("Execution not found"));
+
+        if (!execution.getStudent().getId().equals(studentId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        Map<Long, Long> answersMap = new HashMap<>();
+        if (execution.getAnswersJson() != null) {
+            String json = execution.getAnswersJson().replace("{", "").replace("}", "");
+            if (!json.isEmpty()) {
+                String[] pairs = json.split(",");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=");
+                    if (keyValue.length == 2) {
+                        try {
+                            answersMap.put(Long.parseLong(keyValue[0].trim()), Long.parseLong(keyValue[1].trim()));
+                        } catch (NumberFormatException e) {
+                            // Ignored
+                        }
+                    }
+                }
+            }
+        }
+
+        Exam exam = execution.getExam();
+        List<ExamQuestion> questions = examQuestionRepository.findByExamIdOrderBySortOrderAsc(exam.getId());
+
+        List<com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.QuestionSolution> solutionQuestions = questions
+                .stream()
+                .map(q -> {
+                    Long selectedOptionId = answersMap.get(q.getId());
+                    return com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.QuestionSolution
+                            .builder()
+                            .id(q.getId())
+                            .text(q.getText())
+                            .imageUrl(q.getImageUrl())
+                            .marks(q.getMarks())
+                            .questionType(q.getQuestionType().name())
+                            .selectedOptionId(selectedOptionId)
+                            .options(q.getOptions().stream().map(
+                                    o -> com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.OptionSolution
+                                            .builder()
+                                            .id(o.getId())
+                                            .text(o.getText())
+                                            .imageUrl(o.getImageUrl())
+                                            .isCorrect(o.isCorrect())
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.builder()
+                .executionId(execution.getId())
+                .examTitle(exam.getTitle())
+                .score(execution.getScore())
+                .totalMarks(exam.getTotalMarks())
+                .questions(solutionQuestions)
+                .build();
     }
 }

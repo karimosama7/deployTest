@@ -178,7 +178,11 @@ export const ExamTakerPage: React.FC = () => {
                                 </div>
 
                                 {question.imageUrl && (
-                                    <img src={question.imageUrl} alt="Question" className="max-h-64 rounded-lg border" />
+                                    <img
+                                        src={question.imageUrl}
+                                        alt="Question"
+                                        className="w-full h-auto max-h-[500px] object-contain rounded-lg border bg-gray-50"
+                                    />
                                 )}
 
                                 <div className="space-y-3 pt-2">
@@ -201,6 +205,18 @@ export const ExamTakerPage: React.FC = () => {
                                                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                                             />
                                             <span className="ml-3 text-gray-900">{option.text}</span>
+                                            {option.imageUrl && (
+                                                <img
+                                                    src={option.imageUrl}
+                                                    alt="Option"
+                                                    className="ml-auto h-32 w-32 object-contain rounded border bg-white"
+                                                    onClick={(e) => {
+                                                        e.preventDefault(); // Prevent selecting when clicking image if causing issues, or let it select. 
+                                                        // Actually, label click selects, but let's open modal? No, just show it.
+                                                        window.open(option.imageUrl, '_blank');
+                                                    }}
+                                                />
+                                            )}
                                         </label>
                                     ))}
                                 </div>

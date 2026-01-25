@@ -101,6 +101,14 @@ public class StudentController {
         return ResponseEntity.ok(examService.submitExam(executionId, answers));
     }
 
+    @GetMapping("/exams/solution/{executionId}")
+    public ResponseEntity<StudentExamSolutionResponse> getExamSolution(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long executionId) {
+        Long studentId = getStudentId(userDetails);
+        return ResponseEntity.ok(examService.getStudentExamResultDetails(executionId, studentId));
+    }
+
     // ==================== Attendance ====================
 
     @GetMapping("/attendance")

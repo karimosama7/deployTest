@@ -5,11 +5,13 @@ import { ExamRequest, ExamQuestionRequest, ExamOptionRequest, Subject, ClassSess
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
-import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, XCircle } from 'lucide-react';
 
 export const TeacherExamEditor: React.FC = () => {
     const navigate = useNavigate();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Dropdown data
@@ -92,7 +94,7 @@ export const TeacherExamEditor: React.FC = () => {
             text: '',
             marks: 5,
             questionType: 'MCQ',
-            choices: [
+            options: [
                 { text: '', isCorrect: false },
                 { text: '', isCorrect: false }
             ]
@@ -117,7 +119,7 @@ export const TeacherExamEditor: React.FC = () => {
 
     const handleOptionChange = (qIndex: number, oIndex: number, field: keyof ExamOptionRequest, value: any) => {
         const updatedQuestions = [...(formData.questions || [])];
-        const updatedOptions = [...updatedQuestions[qIndex].choices];
+        const updatedOptions = [...updatedQuestions[qIndex].options];
         updatedOptions[oIndex] = { ...updatedOptions[oIndex], [field]: value };
 
         // If checking 'isCorrect' and only one allowed (MCQ), uncheck others if needed. 
@@ -129,19 +131,19 @@ export const TeacherExamEditor: React.FC = () => {
             });
         }
 
-        updatedQuestions[qIndex].choices = updatedOptions;
+        updatedQuestions[qIndex].options = updatedOptions;
         setFormData({ ...formData, questions: updatedQuestions });
     };
 
     const handleOptionAdd = (qIndex: number) => {
         const updatedQuestions = [...(formData.questions || [])];
-        updatedQuestions[qIndex].choices.push({ text: '', isCorrect: false });
+        updatedQuestions[qIndex].options.push({ text: '', isCorrect: false });
         setFormData({ ...formData, questions: updatedQuestions });
     };
 
     const handleOptionRemove = (qIndex: number, oIndex: number) => {
         const updatedQuestions = [...(formData.questions || [])];
-        updatedQuestions[qIndex].choices.splice(oIndex, 1);
+        updatedQuestions[qIndex].options.splice(oIndex, 1);
         setFormData({ ...formData, questions: updatedQuestions });
     };
 
@@ -369,7 +371,7 @@ export const TeacherExamEditor: React.FC = () => {
 
                                 <div className="pl-4 border-l-2 border-gray-200 space-y-3">
                                     <label className="block text-sm font-medium text-gray-700">Options</label>
-                                    {question.choices.map((option, oIndex) => (
+                                    {question.options.map((option, oIndex) => (
                                         <div key={oIndex} className="flex items-center gap-3">
                                             <input
                                                 type="radio"
@@ -432,15 +434,56 @@ export const TeacherExamEditor: React.FC = () => {
                     </div>
                 )}
 
-                <div className="flex justify-end gap-3 sticky bottom-0 bg-white p-4 border-t z-10">
-                    <Button type="button" variant="secondary" onClick={() => navigate('/teacher/exams')}>
+                <div className="flex justify-end gap-3 sticky bottom-4">
+                    <Button variant="secondary" onClick={() => setIsPreviewOpen(true)}>
+                        Preview Exam
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate('/teacher/exams')}>
                         Cancel
                     </Button>
-                    <Button type="submit" isLoading={isLoading}>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Exam
+                    <Button onClick={handleSubmit} isLoading={isSubmitting}>
+                        Create Exam
                     </Button>
                 </div>
+
+                {/* Preview Modal */}
+                {isPreviewOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] overflow-y-auto relative">
+                            <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
+                                <h3 className="text-xl font-bold">Preview: {formData.title || 'Untitled Exam'}</h3>
+                                <button onClick={() => setIsPreviewOpen(false)} className="text-gray-500 hover:text-gray-700">
+                                    <XCircle size={24} />
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {formData.questions && formData.questions.map((q, idx) => (
+                                    <div key={idx} className="border p-4 rounded-lg">
+                                        <div className="flex gap-4">
+                                            <span className="h-8 w-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                                                {idx + 1}
+                                            </span>
+                                            <div className="flex-1 space-y-3">
+                                                <p className="font-medium text-lg">{q.text}</p>
+                                                {q.imageUrl && <img src={q.imageUrl} alt="Q" className="max-h-60 rounded border" />}
+                                                <div className="space-y-2">
+                                                    {q.options && q.options.map((opt, oIdx) => (
+                                                        <div key={oIdx} className="flex items-center gap-3 p-3 border rounded-lg">
+                                                            <div className="w-4 h-4 rounded-full border border-gray-300" />
+                                                            <span>{opt.text}</span>
+                                                            {opt.imageUrl && <img src={opt.imageUrl} alt="Opt" className="h-10 w-10 object-cover border rounded" />}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-500">{q.marks} marks</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </form>
         </div>
     );

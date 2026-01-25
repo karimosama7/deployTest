@@ -24,6 +24,7 @@ public class StudentDataService {
         private final ExamRepository examRepository;
         private final ExamResultRepository examResultRepository;
         private final AttendanceRepository attendanceRepository;
+        private final StudentExamExecutionRepository executionRepository;
 
         /**
          * Get student's class schedule (classes for their grade)
@@ -129,8 +130,12 @@ public class StudentDataService {
 
                                 boolean isUpcoming = exam.getExamDate().isAfter(LocalDateTime.now());
 
+                                Optional<StudentExamExecution> execution = executionRepository
+                                                .findByExamIdAndStudentId(exam.getId(), studentId);
+
                                 StudentExamResponse response = StudentExamResponse.builder()
                                                 .id(exam.getId())
+                                                .executionId(execution.map(StudentExamExecution::getId).orElse(null))
                                                 .title(exam.getTitle())
                                                 .subjectName(cls.getSubject() != null ? cls.getSubject().getNameAr()
                                                                 : null)

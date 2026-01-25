@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class StudentExamResponse {
     private Long id;
+    private Long executionId;
     private String title;
     private String subjectName;
     private LocalDateTime examDate;

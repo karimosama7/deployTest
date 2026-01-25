@@ -39,8 +39,13 @@ export const studentService = {
         const response = await api.post(`/student/exams/${examId}/start`);
         return response.data;
     },
-    submitExam: async (executionId: number, answers: Record<number, number>): Promise<StudentExamResultResponse> => {
-        const response = await api.post(`/student/exams/submit/${executionId}`, answers);
+    async submitExam(executionId: number, answers: Record<number, number>): Promise<StudentExamResultResponse> {
+        const response = await api.post<StudentExamResultResponse>(`/student/exams/submit/${executionId}`, answers);
+        return response.data;
+    },
+
+    async getExamSolution(executionId: number): Promise<any> {
+        const response = await api.get(`/student/exams/solution/${executionId}`);
         return response.data;
     },
 

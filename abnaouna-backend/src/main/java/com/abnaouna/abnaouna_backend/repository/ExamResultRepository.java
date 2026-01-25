@@ -10,16 +10,19 @@ import java.util.Optional;
 
 @Repository
 public interface ExamResultRepository extends JpaRepository<ExamResult, Long> {
-    
+
     List<ExamResult> findByExam(Exam exam);
-    
+
     List<ExamResult> findByExamId(Long examId);
-    
+
     List<ExamResult> findByStudent(Student student);
-    
+
     List<ExamResult> findByStudentId(Long studentId);
-    
+
     Optional<ExamResult> findByExamIdAndStudentId(Long examId, Long studentId);
-    
+
     List<ExamResult> findByStatus(ExamResult.ExamStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT r.exam.id) FROM ExamResult r WHERE r.exam.teacher.id = :teacherId AND r.submittedAt IS NOT NULL AND r.grade IS NULL")
+    long countPendingGradingByTeacherId(Long teacherId);
 }

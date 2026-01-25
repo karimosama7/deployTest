@@ -57,6 +57,11 @@ export const teacherService = {
         return response.data;
     },
 
+    getDashboardStats: async (): Promise<any> => {
+        const response = await api.get('/teacher/dashboard/stats');
+        return response.data;
+    },
+
     // Attendance
     getEnrolledStudents: async (classId: number): Promise<any[]> => {
         const response = await api.get(`/teacher/classes/${classId}/students`);

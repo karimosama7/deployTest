@@ -22,6 +22,7 @@ import { TeacherClassesPage } from '../pages/teacher/ClassesPage';
 import { TeacherHomeworkPage } from '../pages/teacher/HomeworkPage';
 import { TeacherExamsPage } from '../pages/teacher/ExamsPage';
 import { TeacherExamEditor } from '../pages/teacher/TeacherExamEditor';
+import { TeacherExamResultsPage } from '../pages/teacher/TeacherExamResultsPage';
 import { ParentLayout } from '../components/layout/ParentLayout';
 import { ParentDashboard } from '../pages/parent/ParentDashboard';
 import { ParentChildrenPage } from '../pages/parent/ParentChildrenPage';
@@ -102,6 +103,7 @@ export const AppRoutes = () => {
                     <Route path="homework" element={<TeacherHomeworkPage />} />
                     <Route path="exams" element={<TeacherExamsPage />} />
                     <Route path="exams/new" element={<TeacherExamEditor />} />
+                    <Route path="exams/:examId/results" element={<TeacherExamResultsPage />} />
                 </Route>
             </Route>
 

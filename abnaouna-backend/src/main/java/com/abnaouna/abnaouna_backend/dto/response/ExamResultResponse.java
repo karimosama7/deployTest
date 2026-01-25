@@ -14,13 +14,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExamResultResponse {
-    
+
     private Long id;
     private Long examId;
     private String examTitle;
     private Long studentId;
     private String studentName;
     private BigDecimal grade;
+    private Integer totalMarks;
     private ExamResult.ExamStatus status;
     private LocalDateTime submittedAt;
     private LocalDateTime gradedAt;

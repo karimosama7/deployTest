@@ -261,4 +261,14 @@ public class TeacherController {
         java.time.LocalDateTime newDate = java.time.LocalDateTime.parse(dateStr);
         return ResponseEntity.ok(examService.duplicateExam(id, teacherId, newDate));
     }
+
+    // ==================== Dashboard Stats ====================
+    private final TeacherDashboardService dashboardService;
+
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<TeacherDashboardStats> getDashboardStats(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long teacherId = getTeacherId(userDetails);
+        return ResponseEntity.ok(dashboardService.getStats(teacherId));
+    }
 }

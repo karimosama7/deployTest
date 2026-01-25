@@ -112,7 +112,7 @@ export interface ExamQuestionRequest {
     imageUrl?: string;
     marks: number;
     questionType: 'MCQ';
-    choices: ExamOptionRequest[];
+    options: ExamOptionRequest[];
     sortOrder?: number;
 }
 
@@ -198,6 +198,7 @@ export interface ExamResultResponse {
     studentName: string;
     grade?: number; // mapped to score
     score?: number;
+    totalMarks?: number;
     status: 'PENDING' | 'COMPLETED' | 'LATE' | 'FAILED';
     submittedAt?: string;
     gradedAt?: string;
@@ -267,6 +268,7 @@ export interface StudentHomeworkResponse {
 
 export interface StudentExamResponse {
     id: number;
+    executionId?: number;
     title: string;
     subjectName?: string;
     examDate: string;
@@ -274,6 +276,32 @@ export interface StudentExamResponse {
     status: string;
     grade?: number;
 }
+
+export interface StudentExamSolutionResponse {
+    executionId: number;
+    examTitle: string;
+    score: number;
+    totalMarks: number;
+    questions: SolutionQuestionResponse[];
+}
+
+export interface SolutionQuestionResponse {
+    id: number;
+    text: string;
+    imageUrl?: string;
+    marks: number;
+    questionType: string;
+    selectedOptionId?: number;
+    options: SolutionOptionResponse[];
+}
+
+export interface SolutionOptionResponse {
+    id: number;
+    text: string;
+    imageUrl?: string;
+    isCorrect: boolean;
+}
+
 
 export interface StudentAttendanceResponse {
     classId: number;

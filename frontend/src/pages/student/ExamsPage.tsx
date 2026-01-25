@@ -16,8 +16,8 @@ export const ExamsPage = () => {
         const fetchExams = async () => {
             try {
                 const data = await studentService.getExams();
-                // Sort by exam date (upcoming first)
-                data.sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+                // Sort by exam date (newest first)
+                data.sort((a, b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime());
                 setExams(data);
             } catch (error) {
                 console.error('Failed to fetch exams', error);

@@ -20,4 +20,7 @@ public interface HomeworkRepository extends JpaRepository<Homework, Long> {
 
     // Sorted queries (newest first)
     List<Homework> findByClassSessionIdOrderByCreatedAtDesc(Long classSessionId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(h) FROM Homework h JOIN h.classSession cs WHERE cs.teacher.id = :teacherId AND h.dueDate > :now")
+    long countActiveHomeworkByTeacherId(Long teacherId, LocalDateTime now);
 }
