@@ -24,6 +24,7 @@ public class ParentController {
     private final NotificationService notificationService;
     private final ParentRepository parentRepository;
     private final UserRepository userRepository;
+    private final com.abnaouna.abnaouna_backend.service.ExamService examService;
 
     /**
      * Get current parent's ID from authenticated user
@@ -134,5 +135,13 @@ public class ParentController {
             @AuthenticationPrincipal UserDetails userDetails) {
         Long parentId = getParentId(userDetails);
         return ResponseEntity.ok(notificationService.getUnreadCount(parentId));
+    }
+
+    // ==================== Exam Solution ====================
+
+    @GetMapping("/exams/solution/{executionId}")
+    public ResponseEntity<StudentExamSolutionResponse> getChildExamSolution(
+            @PathVariable Long executionId) {
+        return ResponseEntity.ok(examService.getStudentExamSolutionForTeacher(executionId));
     }
 }

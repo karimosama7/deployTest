@@ -74,6 +74,16 @@ public class Exam {
     @Builder.Default
     private List<ExamResult> results = new ArrayList<>();
 
+    // Cascade delete for exam questions
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ExamQuestion> questions = new ArrayList<>();
+
+    // Cascade delete for student exam executions
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<StudentExamExecution> executions = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

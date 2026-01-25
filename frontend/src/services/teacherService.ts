@@ -133,5 +133,9 @@ export const teacherService = {
     enterGrades: async (examId: number, studentGrades: Record<number, number>): Promise<ExamResultResponse[]> => {
         const response = await api.post(`/teacher/exams/${examId}/grades`, { studentGrades });
         return response.data;
+    },
+    getStudentExamSolution: async (executionId: number): Promise<any> => {
+        const response = await api.get(`/teacher/exams/solution/${executionId}`);
+        return response.data;
     }
 };

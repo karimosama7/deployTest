@@ -196,6 +196,7 @@ export interface ExamResultResponse {
     examTitle: string;
     studentId: number;
     studentName: string;
+    executionId?: number; // For viewing detailed solution
     grade?: number; // mapped to score
     score?: number;
     totalMarks?: number;
@@ -280,6 +281,7 @@ export interface StudentExamResponse {
 export interface StudentExamSolutionResponse {
     executionId: number;
     examTitle: string;
+    studentName?: string;
     score: number;
     totalMarks: number;
     questions: SolutionQuestionResponse[];

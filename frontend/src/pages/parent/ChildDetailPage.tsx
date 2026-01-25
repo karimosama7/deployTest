@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, FileText, BarChart2, CheckCircle, Book } from 'lucide-react';
+import { ArrowRight, Calendar, FileText, BarChart2, CheckCircle, Book, Eye } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { parentService } from '../../services/parentService';
 import { 
@@ -210,7 +210,7 @@ export const ChildDetailPage = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-left">
+                                    <div className="text-left flex flex-col items-end gap-2">
                                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                                             exam.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                                             exam.status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
@@ -219,7 +219,16 @@ export const ChildDetailPage = () => {
                                             {exam.status === 'COMPLETED' ? 'اكتمل' : exam.status === 'UPCOMING' ? 'قادم' : exam.status}
                                         </span>
                                         {exam.grade !== undefined && exam.grade !== null && (
-                                            <p className="text-sm font-bold text-indigo-600 mt-1">{exam.grade}/100</p>
+                                            <p className="text-sm font-bold text-indigo-600">{exam.grade}/100</p>
+                                        )}
+                                        {exam.executionId && exam.status === 'COMPLETED' && (
+                                            <button
+                                                onClick={() => navigate(`/parent/exams/solution/${exam.executionId}`)}
+                                                className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1 text-sm"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                <span>عرض الحل</span>
+                                            </button>
                                         )}
                                     </div>
                                 </Card>

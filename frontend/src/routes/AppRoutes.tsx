@@ -23,10 +23,12 @@ import { TeacherHomeworkPage } from '../pages/teacher/HomeworkPage';
 import { TeacherExamsPage } from '../pages/teacher/ExamsPage';
 import { TeacherExamEditor } from '../pages/teacher/TeacherExamEditor';
 import { TeacherExamResultsPage } from '../pages/teacher/TeacherExamResultsPage';
+import { TeacherExamSolutionPage } from '../pages/teacher/TeacherExamSolutionPage';
 import { ParentLayout } from '../components/layout/ParentLayout';
 import { ParentDashboard } from '../pages/parent/ParentDashboard';
 import { ParentChildrenPage } from '../pages/parent/ParentChildrenPage';
 import { ChildDetailPage } from '../pages/parent/ChildDetailPage';
+import { ParentExamSolutionPage } from '../pages/parent/ParentExamSolutionPage';
 
 interface ProtectedRouteProps {
     allowedRoles?: UserRole[];
@@ -104,6 +106,7 @@ export const AppRoutes = () => {
                     <Route path="exams" element={<TeacherExamsPage />} />
                     <Route path="exams/new" element={<TeacherExamEditor />} />
                     <Route path="exams/:examId/results" element={<TeacherExamResultsPage />} />
+                    <Route path="exams/solution/:executionId" element={<TeacherExamSolutionPage />} />
                 </Route>
             </Route>
 
@@ -113,6 +116,7 @@ export const AppRoutes = () => {
                     <Route index element={<ParentDashboard />} />
                     <Route path="children" element={<ParentChildrenPage />} />
                     <Route path="children/:childId" element={<ChildDetailPage />} />
+                    <Route path="exams/solution/:executionId" element={<ParentExamSolutionPage />} />
 
                 </Route>
             </Route>

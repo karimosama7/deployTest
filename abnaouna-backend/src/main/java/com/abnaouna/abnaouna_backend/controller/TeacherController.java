@@ -234,14 +234,23 @@ public class TeacherController {
     }
 
     @DeleteMapping("/exams/{id}")
-    public ResponseEntity<Void> deleteExam(@PathVariable Long id) {
-        examService.deleteExam(id);
+    public ResponseEntity<Void> deleteExam(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        Long teacherId = getTeacherId(userDetails);
+        examService.deleteExam(id, teacherId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/exams/{id}/results")
     public ResponseEntity<List<ExamResultResponse>> getExamResults(@PathVariable Long id) {
         return ResponseEntity.ok(examService.getExamResults(id));
+    }
+
+    @GetMapping("/exams/solution/{executionId}")
+    public ResponseEntity<com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse> getStudentExamSolution(
+            @PathVariable Long executionId) {
+        return ResponseEntity.ok(examService.getStudentExamSolutionForTeacher(executionId));
     }
 
     @PostMapping("/exams/{id}/grades")

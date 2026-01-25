@@ -183,7 +183,7 @@ public class ExamService {
 
     @Transactional
     public StudentExamExecutionResponse startExam(Long studentId, Long examId) {
-        // Check if already started
+        // Check if already started - this handles most cases
         Optional<StudentExamExecution> existing = executionRepository.findByExamIdAndStudentId(examId, studentId);
         if (existing.isPresent()) {
             return mapToExecutionResponse(existing.get());
@@ -202,6 +202,7 @@ public class ExamService {
             throw new RuntimeException("Exam has expired");
         }
 
+        // Try to create new execution
         StudentExamExecution execution = StudentExamExecution.builder()
                 .student(student)
                 .exam(exam)
@@ -209,8 +210,24 @@ public class ExamService {
                 .status(StudentExamExecution.ExecutionStatus.IN_PROGRESS)
                 .build();
 
-        execution = executionRepository.save(execution);
-        return mapToExecutionResponse(execution);
+        try {
+            // Use saveAndFlush to get immediate database feedback
+            execution = executionRepository.saveAndFlush(execution);
+            return mapToExecutionResponse(execution);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Race condition: another request already created the execution
+            // Clear the persistence context and fetch fresh from database
+            throw new RuntimeException("DUPLICATE_EXAM_START:" + examId + ":" + studentId);
+        }
+    }
+
+    /**
+     * Helper method to get existing exam execution after a race condition
+     */
+    public StudentExamExecutionResponse getExistingExamExecution(Long examId, Long studentId) {
+        return executionRepository.findByExamIdAndStudentId(examId, studentId)
+                .map(this::mapToExecutionResponse)
+                .orElseThrow(() -> new RuntimeException("Exam execution not found"));
     }
 
     private StudentExamExecutionResponse mapToExecutionResponse(StudentExamExecution execution) {
@@ -408,9 +425,15 @@ public class ExamService {
     }
 
     @Transactional
-    public void deleteExam(Long examId) {
+    public void deleteExam(Long examId, Long teacherId) {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
+        
+        // Verify ownership
+        if (!exam.getTeacher().getId().equals(teacherId)) {
+            throw new RuntimeException("You can only delete exams you created");
+        }
+        
         examRepository.delete(exam);
     }
 
@@ -585,12 +608,19 @@ public class ExamService {
     }
 
     private ExamResultResponse mapToResultResponse(ExamResult result) {
+        // Find the execution for this student/exam to get executionId
+        Long executionId = executionRepository
+                .findByExamIdAndStudentId(result.getExam().getId(), result.getStudent().getId())
+                .map(StudentExamExecution::getId)
+                .orElse(null);
+
         return ExamResultResponse.builder()
                 .id(result.getId())
                 .examId(result.getExam().getId())
                 .examTitle(result.getExam().getTitle())
                 .studentId(result.getStudent().getId())
                 .studentName(result.getStudent().getUser().getFullName())
+                .executionId(executionId)
                 .grade(result.getGrade())
                 .totalMarks(result.getExam().getTotalMarks())
                 .status(result.getStatus())
@@ -725,6 +755,70 @@ public class ExamService {
         return com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.builder()
                 .executionId(execution.getId())
                 .examTitle(exam.getTitle())
+                .score(execution.getScore())
+                .totalMarks(exam.getTotalMarks())
+                .questions(solutionQuestions)
+                .build();
+    }
+
+    /**
+     * Get student exam solution for teacher/parent view (no student ownership check)
+     */
+    public com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse getStudentExamSolutionForTeacher(
+            Long executionId) {
+        StudentExamExecution execution = executionRepository.findById(executionId)
+                .orElseThrow(() -> new RuntimeException("Execution not found"));
+
+        Map<Long, Long> answersMap = new HashMap<>();
+        if (execution.getAnswersJson() != null) {
+            String json = execution.getAnswersJson().replace("{", "").replace("}", "");
+            if (!json.isEmpty()) {
+                String[] pairs = json.split(",");
+                for (String pair : pairs) {
+                    String[] keyValue = pair.split("=");
+                    if (keyValue.length == 2) {
+                        try {
+                            answersMap.put(Long.parseLong(keyValue[0].trim()), Long.parseLong(keyValue[1].trim()));
+                        } catch (NumberFormatException e) {
+                            // Ignored
+                        }
+                    }
+                }
+            }
+        }
+
+        Exam exam = execution.getExam();
+        List<ExamQuestion> questions = examQuestionRepository.findByExamIdOrderBySortOrderAsc(exam.getId());
+
+        List<com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.QuestionSolution> solutionQuestions = questions
+                .stream()
+                .map(q -> {
+                    Long selectedOptionId = answersMap.get(q.getId());
+                    return com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.QuestionSolution
+                            .builder()
+                            .id(q.getId())
+                            .text(q.getText())
+                            .imageUrl(q.getImageUrl())
+                            .marks(q.getMarks())
+                            .questionType(q.getQuestionType().name())
+                            .selectedOptionId(selectedOptionId)
+                            .options(q.getOptions().stream().map(
+                                    o -> com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.OptionSolution
+                                            .builder()
+                                            .id(o.getId())
+                                            .text(o.getText())
+                                            .imageUrl(o.getImageUrl())
+                                            .isCorrect(o.isCorrect())
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse.builder()
+                .executionId(execution.getId())
+                .examTitle(exam.getTitle())
+                .studentName(execution.getStudent().getUser().getFullName())
                 .score(execution.getScore())
                 .totalMarks(exam.getTotalMarks())
                 .questions(solutionQuestions)

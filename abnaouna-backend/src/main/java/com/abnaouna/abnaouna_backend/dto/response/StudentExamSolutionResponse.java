@@ -14,6 +14,7 @@ import java.util.List;
 public class StudentExamSolutionResponse {
     private Long executionId;
     private String examTitle;
+    private String studentName;
     private BigDecimal score;
     private Integer totalMarks;
     private List<QuestionSolution> questions;

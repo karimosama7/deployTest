@@ -20,6 +20,7 @@ public class ExamResultResponse {
     private String examTitle;
     private Long studentId;
     private String studentName;
+    private Long executionId;  // For viewing detailed solution
     private BigDecimal grade;
     private Integer totalMarks;
     private ExamResult.ExamStatus status;

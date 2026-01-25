@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ChevronRight, Search, Download, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { Button } from '../../components/common/Button';
+import { ChevronRight, Search, Eye } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { teacherService } from '../../services/teacherService';
 import { ExamResultResponse } from '../../types/api';
@@ -70,16 +68,17 @@ export const TeacherExamResultsPage = () => {
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الدرجة</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">وقت التسليم</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-500">جاري التحميل...</td>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">جاري التحميل...</td>
                                 </tr>
                             ) : filteredResults.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-gray-500">لا توجد نتائج حتى الآن</td>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">لا توجد نتائج حتى الآن</td>
                                 </tr>
                             ) : (
                                 filteredResults.map((result) => (
@@ -111,6 +110,20 @@ export const TeacherExamResultsPage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {result.submittedAt ? new Date(result.submittedAt).toLocaleString('ar-EG') : '--'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            {result.executionId && result.status === 'COMPLETED' ? (
+                                                <button
+                                                    onClick={() => navigate(`/teacher/exams/solution/${result.executionId}`)}
+                                                    className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                                                    title="عرض الحل"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    <span>عرض الحل</span>
+                                                </button>
+                                            ) : (
+                                                <span className="text-gray-400">--</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

@@ -65,4 +65,10 @@ export const parentService = {
         const response = await api.get('/parent/notifications/unread-count');
         return response.data;
     },
+
+    // Exam Solution
+    getExamSolution: async (executionId: number): Promise<any> => {
+        const response = await api.get(`/parent/exams/solution/${executionId}`);
+        return response.data;
+    },
 };

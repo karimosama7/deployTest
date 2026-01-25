@@ -91,7 +91,15 @@ public class StudentController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long examId) {
         Long studentId = getStudentId(userDetails);
-        return ResponseEntity.ok(examService.startExam(studentId, examId));
+        try {
+            return ResponseEntity.ok(examService.startExam(studentId, examId));
+        } catch (RuntimeException e) {
+            // Handle race condition - another request already started the exam
+            if (e.getMessage() != null && e.getMessage().startsWith("DUPLICATE_EXAM_START:")) {
+                return ResponseEntity.ok(examService.getExistingExamExecution(examId, studentId));
+            }
+            throw e;
+        }
     }
 
     @PostMapping("/exams/submit/{executionId}")

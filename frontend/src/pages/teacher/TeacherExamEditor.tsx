@@ -10,7 +10,6 @@ import { ArrowLeft, Plus, Trash2, Save, XCircle } from 'lucide-react';
 export const TeacherExamEditor: React.FC = () => {
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +26,7 @@ export const TeacherExamEditor: React.FC = () => {
         durationMinutes: 60,
         totalMarks: 100,
         passingScore: 50,
-        resultConfiguration: 'MANUAL',
+        resultConfiguration: 'IMMEDIATE',
         examDate: '',
         published: false,
         questions: []
@@ -178,7 +177,11 @@ export const TeacherExamEditor: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
+        
+        // Prevent double-submit
+        if (isSubmitting) return;
+        
+        setIsSubmitting(true);
         setError(null);
         try {
             await teacherService.createExam(formData);
@@ -187,7 +190,7 @@ export const TeacherExamEditor: React.FC = () => {
             console.error(err);
             setError('Failed to create exam');
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -307,19 +310,6 @@ export const TeacherExamEditor: React.FC = () => {
                                     required
                                 />
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Result Visibility</label>
-                                <select
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 border px-3"
-                                    value={formData.resultConfiguration}
-                                    onChange={e => setFormData({ ...formData, resultConfiguration: e.target.value as any })}
-                                >
-                                    <option value="MANUAL">Manual (Teacher Release)</option>
-                                    <option value="IMMEDIATE">Immediate (After Submit)</option>
-                                    <option value="AFTER_DATE">After End Date</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                 </Card>
@@ -438,10 +428,10 @@ export const TeacherExamEditor: React.FC = () => {
                     <Button variant="secondary" onClick={() => setIsPreviewOpen(true)}>
                         Preview Exam
                     </Button>
-                    <Button variant="outline" onClick={() => navigate('/teacher/exams')}>
+                    <Button variant="secondary" onClick={() => navigate('/teacher/exams')}>
                         Cancel
                     </Button>
-                    <Button onClick={handleSubmit} isLoading={isSubmitting}>
+                    <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
                         Create Exam
                     </Button>
                 </div>

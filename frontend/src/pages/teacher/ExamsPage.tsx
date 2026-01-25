@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Plus, Calendar, CheckCircle, Clock, MoreVertical, AlertTriangle, ExternalLink, BarChart2 } from 'lucide-react';
+import { FileText, Plus, Calendar, CheckCircle, Clock, MoreVertical, AlertTriangle, ExternalLink, BarChart2, Trash2 } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { ExamResponse } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
 import { useToast } from '../../context/ToastContext';
@@ -10,6 +11,9 @@ import { useToast } from '../../context/ToastContext';
 export const TeacherExamsPage = () => {
     const [examsList, setExamsList] = useState<ExamResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [examToDelete, setExamToDelete] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const { addToast } = useToast();
 
     useEffect(() => {
@@ -26,6 +30,29 @@ export const TeacherExamsPage = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleDeleteExam = async () => {
+        if (!examToDelete) return;
+        setIsDeleting(true);
+        try {
+            await teacherService.deleteExam(examToDelete);
+            addToast('تم حذف الاختبار بنجاح', 'success');
+            setDeleteModalOpen(false);
+            setExamToDelete(null);
+            loadExams(); // Refresh list
+        } catch (error: any) {
+            console.error('Failed to delete exam', error);
+            const msg = error.response?.data?.message || 'فشل حذف الاختبار';
+            addToast(msg, 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const openDeleteModal = (examId: number) => {
+        setExamToDelete(examId);
+        setDeleteModalOpen(true);
     };
 
     const containerVariants = {
@@ -130,14 +157,23 @@ export const TeacherExamsPage = () => {
                                                             <span className="text-sm text-gray-500">اختبار داخلي</span>
                                                         )}
                                                     </div>
-                                                    <Button
-                                                        variant="secondary"
-                                                        className="w-full text-xs h-9"
-                                                        onClick={() => window.location.href = `/teacher/exams/${exam.id}/results`}
-                                                    >
-                                                        <BarChart2 className="w-4 h-4 ml-2" />
-                                                        نتائج الطلاب
-                                                    </Button>
+                                                    <div className="flex gap-2 w-full">
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="flex-1 text-xs h-9"
+                                                            onClick={() => window.location.href = `/teacher/exams/${exam.id}/results`}
+                                                        >
+                                                            <BarChart2 className="w-4 h-4 ml-2" />
+                                                            نتائج الطلاب
+                                                        </Button>
+                                                        <button
+                                                            onClick={() => openDeleteModal(exam.id)}
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="حذف الاختبار"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </Card>
@@ -148,6 +184,22 @@ export const TeacherExamsPage = () => {
                     </AnimatePresence>
                 </div>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    setDeleteModalOpen(false);
+                    setExamToDelete(null);
+                }}
+                onConfirm={handleDeleteExam}
+                title="حذف الاختبار"
+                message="هل أنت متأكد من حذف هذا الاختبار؟ سيتم حذف جميع الأسئلة والنتائج المرتبطة به. لا يمكن التراجع عن هذا الإجراء."
+                confirmText="حذف"
+                cancelText="إلغاء"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </motion.div>
     );
 };
