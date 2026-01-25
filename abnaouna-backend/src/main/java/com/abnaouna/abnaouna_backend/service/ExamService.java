@@ -152,7 +152,7 @@ public class ExamService {
                                 exam.getTitle(),
                                 exam.getSubject().getNameAr(),
                                 exam.getExamDate().toLocalDate().toString()),
-                        Notification.NotificationType.EXAM_ANNOUNCEMENT);
+                        Notification.NotificationType.GENERAL);
             }
         }
     }
@@ -580,7 +580,6 @@ public class ExamService {
         builder.passingScore(exam.getPassingScore());
         builder.resultConfiguration(exam.getResultConfiguration().name());
         builder.endDate(exam.getEndDate());
-        builder.published(exam.isPublished());
 
         return builder.build();
     }

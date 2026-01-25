@@ -20,6 +20,4 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByGradeIdOrderByExamDateDesc(Long gradeId);
 
     List<Exam> findByTeacherIdOrderByExamDateDesc(Long teacherId);
-
-    List<Exam> findByTeacherIdOrderByExamDateDesc(Long teacherId);
 }
