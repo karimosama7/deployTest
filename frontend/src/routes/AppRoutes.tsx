@@ -113,7 +113,7 @@ export const AppRoutes = () => {
                     <Route index element={<ParentDashboard />} />
                     <Route path="children" element={<ParentChildrenPage />} />
                     <Route path="children/:childId" element={<ChildDetailPage />} />
-                    <Route path="reports" element={<div>Parent Reports Placeholder</div>} />
+
                 </Route>
             </Route>
 

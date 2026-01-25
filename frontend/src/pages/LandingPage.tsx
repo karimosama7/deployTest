@@ -24,9 +24,14 @@ export function LandingPage() {
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <button className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm shadow-lg shadow-blue-500/20">
+            <a
+              href="https://wa.me/201024047192"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm shadow-lg shadow-blue-500/20"
+            >
               تواصل معنا
-            </button>
+            </a>
             <button
               onClick={() => navigate('/login')}
               className="text-gray-600 font-medium hover:text-gray-900 hidden md:block"
@@ -45,9 +50,7 @@ export function LandingPage() {
             <a href="#" className="hover:text-blue-600 transition-colors">
               الفصول
             </a>
-            <a href="#" className="hover:text-blue-600 transition-colors">
-              المعلمون
-            </a>
+
             <a href="#" className="hover:text-blue-600 transition-colors">
               الباقات
             </a>
@@ -66,7 +69,6 @@ export function LandingPage() {
         {/* <TrustSignals /> Removed as per request */}
         <Features />
         {/* <ClassroomSection /> Removed as per request */}
-        <TeacherCredentials />
         <PricingCards />
       </main>
 

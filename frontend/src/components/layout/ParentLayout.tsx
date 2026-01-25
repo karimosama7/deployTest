@@ -13,7 +13,7 @@ const ParentSidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     const navigation = [
         { name: 'الرئيسية', href: '/parent', icon: Home },
         { name: 'أبنائي', href: '/parent/children', icon: Users },
-        { name: 'التقارير', href: '/parent/reports', icon: FileText },
+
     ];
 
     return (

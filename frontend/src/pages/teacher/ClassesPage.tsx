@@ -4,6 +4,7 @@ import { Video, Calendar, Clock, Plus, Users, CheckCircle, Trash2, Play, Square,
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { Input } from '../../components/common/Input';
 import { ClassSessionResponse, Grade, Subject } from '../../types/api';
 import { teacherService } from '../../services/teacherService';
@@ -17,6 +18,22 @@ export const TeacherClassesPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { addToast } = useToast();
+
+    // Confirm Modal State
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type: 'danger' | 'warning' | 'info' | 'success';
+        action: () => Promise<void>;
+        isLoading?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'warning',
+        action: async () => { }
+    });
 
     // Form State
     const [formData, setFormData] = useState({
@@ -99,16 +116,23 @@ export const TeacherClassesPage = () => {
         }
     };
 
-    const handleDeleteClass = async (classId: number) => {
-        if (!window.confirm('هل أنت متأكد من حذف هذه الحصة؟')) return;
-        try {
-            await teacherService.deleteClass(classId);
-            addToast('تم حذف الحصة', 'success');
-            loadData();
-        } catch (error) {
-            console.error('Failed to delete class', error);
-            addToast('فشل حذف الحصة', 'error');
-        }
+    const promptDeleteClass = (cls: ClassSessionResponse) => {
+        setConfirmState({
+            isOpen: true,
+            title: 'حذف الحصة',
+            message: `هل أنت متأكد من حذف حصة "${cls.title}"؟`,
+            type: 'danger',
+            action: async () => {
+                try {
+                    await teacherService.deleteClass(cls.id);
+                    addToast('تم حذف الحصة', 'success');
+                    loadData();
+                } catch (error) {
+                    console.error('Failed to delete class', error);
+                    addToast('فشل حذف الحصة', 'error');
+                }
+            }
+        });
     };
 
     const handleStartClass = async (classId: number) => {
@@ -179,6 +203,16 @@ export const TeacherClassesPage = () => {
         }
     };
 
+    const executeConfirmAction = async () => {
+        setConfirmState(prev => ({ ...prev, isLoading: true }));
+        try {
+            await confirmState.action();
+            setConfirmState(prev => ({ ...prev, isOpen: false }));
+        } finally {
+            setConfirmState(prev => ({ ...prev, isLoading: false }));
+        }
+    };
+
     return (
         <motion.div
             className="space-y-6"
@@ -231,7 +265,7 @@ export const TeacherClassesPage = () => {
                                                     {getStatusText(cls.status)}
                                                 </span>
                                                 <button
-                                                    onClick={() => handleDeleteClass(cls.id)}
+                                                    onClick={() => promptDeleteClass(cls)}
                                                     className="text-red-400 hover:text-red-600 p-1"
                                                     title="حذف الحصة"
                                                 >
@@ -294,6 +328,16 @@ export const TeacherClassesPage = () => {
                     </AnimatePresence>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmState.isOpen}
+                onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={executeConfirmAction}
+                title={confirmState.title}
+                message={confirmState.message}
+                type={confirmState.type}
+                isLoading={confirmState.isLoading}
+            />
 
             {/* Create Class Modal */}
             <Modal
@@ -423,3 +467,4 @@ export const TeacherClassesPage = () => {
         </motion.div>
     );
 };
+

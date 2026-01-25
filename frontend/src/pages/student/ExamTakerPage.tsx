@@ -4,6 +4,7 @@ import { studentService } from '../../services/studentService';
 import { StudentExamExecutionResponse } from '../../types/api';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { Clock, AlertTriangle } from 'lucide-react';
 
 export const ExamTakerPage: React.FC = () => {
@@ -15,6 +16,23 @@ export const ExamTakerPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Confirmation Modal State
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type: 'danger' | 'warning' | 'info' | 'success';
+        action: () => Promise<void>;
+        isLoading?: boolean;
+        isAlert?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'warning',
+        action: async () => { }
+    });
 
     // Initial Load
     useEffect(() => {
@@ -64,7 +82,7 @@ export const ExamTakerPage: React.FC = () => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleSubmit(true); // Auto submit
+                    submitExam(true); // Auto submit direct call
                     return 0;
                 }
                 return prev - 1;
@@ -93,24 +111,52 @@ export const ExamTakerPage: React.FC = () => {
         }));
     };
 
-    const handleSubmit = async (auto = false) => {
-        if (!execution) return;
+    // Actual submission logic
+    const submitExam = async (auto = false) => {
+        if (!execution || isSubmitting) return; // Prevent double submit
         setIsSubmitting(true);
         try {
             const result = await studentService.submitExam(execution.executionId, answers);
-            navigate('/student/exams', { state: { result } }); // Or navigate to a result page
+            navigate('/student/exams', { state: { result } });
         } catch (err) {
             console.error('Submission failed', err);
-            // Retry logic? or show error
-            alert('Failed to submit exam. Please try again.');
-            setIsSubmitting(false);
+            // Show alert modal on failure logic
+            setConfirmState({
+                isOpen: true,
+                title: 'خطأ في التسليم',
+                message: 'حدث خطأ أثناء تسليم الاختبار. حاول مرة أخرى.',
+                type: 'danger',
+                isAlert: true,
+                action: async () => { setIsSubmitting(false); } // Allow retry
+            });
         }
+    };
+
+    // Trigger confirmation (Manual submit)
+    const handleFinishClick = () => {
+        setConfirmState({
+            isOpen: true,
+            title: 'تأكيد إنهاء الاختبار',
+            message: 'هل أنت متأكد من رغبتك في إنهاء الاختبار وتسليم الإجابات؟',
+            type: 'warning',
+            action: async () => submitExam(false)
+        });
     };
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
         const s = seconds % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const executeConfirmAction = async () => {
+        setConfirmState(prev => ({ ...prev, isLoading: true }));
+        try {
+            await confirmState.action();
+            setConfirmState(prev => ({ ...prev, isOpen: false }));
+        } finally {
+            setConfirmState(prev => ({ ...prev, isLoading: false }));
+        }
     };
 
     if (isLoading) return <div className="flex h-screen items-center justify-center">Loading Exam...</div>;
@@ -142,7 +188,7 @@ export const ExamTakerPage: React.FC = () => {
                     </div>
 
                     <Button
-                        onClick={() => handleSubmit(false)}
+                        onClick={handleFinishClick}
                         isLoading={isSubmitting}
                         variant={timeLeft < 60 ? 'danger' : 'primary'}
                     >
@@ -211,8 +257,7 @@ export const ExamTakerPage: React.FC = () => {
                                                     alt="Option"
                                                     className="ml-auto h-32 w-32 object-contain rounded border bg-white"
                                                     onClick={(e) => {
-                                                        e.preventDefault(); // Prevent selecting when clicking image if causing issues, or let it select. 
-                                                        // Actually, label click selects, but let's open modal? No, just show it.
+                                                        e.preventDefault();
                                                         window.open(option.imageUrl, '_blank');
                                                     }}
                                                 />
@@ -228,7 +273,7 @@ export const ExamTakerPage: React.FC = () => {
                 <div className="flex justify-center pt-6 pb-12">
                     <Button
                         size="lg"
-                        onClick={() => handleSubmit(false)}
+                        onClick={handleFinishClick}
                         isLoading={isSubmitting}
                         className="w-full max-w-sm"
                     >
@@ -236,6 +281,17 @@ export const ExamTakerPage: React.FC = () => {
                     </Button>
                 </div>
             </main>
+
+            <ConfirmModal
+                isOpen={confirmState.isOpen}
+                onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={executeConfirmAction}
+                title={confirmState.title}
+                message={confirmState.message}
+                type={confirmState.type}
+                isLoading={confirmState.isLoading}
+                isAlert={confirmState.isAlert}
+            />
         </div>
     );
 };

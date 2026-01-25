@@ -3,6 +3,7 @@ import { DataTable } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
 import { Plus, UserPlus, Power, PowerOff, GraduationCap, Key, Copy } from 'lucide-react';
 import { Modal } from '../../components/common/Modal';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -36,6 +37,22 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
     const [resetModalOpen, setResetModalOpen] = useState(false);
     const [resetCreds, setResetCreds] = useState<{ username: string; password: string } | null>(null);
     const [copiedReset, setCopiedReset] = useState(false);
+
+    // Confirmation Modal State
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type: 'danger' | 'warning' | 'info' | 'success';
+        action: () => Promise<void>;
+        isLoading?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'warning',
+        action: async () => { }
+    });
 
     const getTitle = () => {
         switch (roleFilter) {
@@ -150,37 +167,82 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
         }
     };
 
-    // Toggle activation handler
-    const handleToggleActivation = async (user: UserData) => {
-        if (window.confirm(`هل أنت متأكد من ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} هذا المستخدم؟`)) {
-            try {
-                await api.put(`/admin/users/${user.id}/activate?active=${!user.isActive}`);
-                addToast(`تم ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} المستخدم بنجاح`, 'success');
-                fetchUsers(); // Refresh list
-            } catch (err) {
-                console.error(err);
-                addToast('حدث خطأ أثناء تغيير حالة المستخدم', 'error');
-            }
+    // Generic Action Handler for Modal
+    const executeAction = async () => {
+        setConfirmState(prev => ({ ...prev, isLoading: true }));
+        try {
+            await confirmState.action();
+            setConfirmState(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+            console.error(error);
+            // Error handling usually inside the action, but just in case
+        } finally {
+            setConfirmState(prev => ({ ...prev, isLoading: false }));
         }
     };
 
-    // Password reset handler
-    const handleResetPassword = async (user: UserData) => {
-        if (window.confirm(`هل أنت متأكد من إعادة تعيين كلمة مرور "${user.fullName}"؟`)) {
-            try {
-                const result = await adminService.resetPassword(Number(user.id));
-                setResetCreds({
-                    username: result.username,
-                    password: result.generatedPassword || 'N/A'
-                });
-                setResetModalOpen(true);
-                addToast('تم إعادة تعيين كلمة المرور', 'success');
-            } catch (err: any) {
-                console.error(err);
-                const msg = err.response?.data?.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور';
-                addToast(msg, 'error');
+    // Toggle activation handler
+    const promptToggleActivation = (user: UserData) => {
+        setConfirmState({
+            isOpen: true,
+            title: user.isActive ? 'إلغاء تفعيل المستخدم' : 'تفعيل المستخدم',
+            message: `هل أنت متأكد من ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} المستخدم "${user.fullName}"؟`,
+            type: user.isActive ? 'warning' : 'info',
+            action: async () => {
+                try {
+                    await api.put(`/admin/users/${user.id}/activate?active=${!user.isActive}`);
+                    addToast(`تم ${user.isActive ? 'إلغاء تفعيل' : 'تفعيل'} المستخدم بنجاح`, 'success');
+                    fetchUsers();
+                } catch (err: any) {
+                    const msg = err.response?.data?.message || 'حدث خطأ أثناء تغيير الحالة';
+                    addToast(msg, 'error');
+                }
             }
-        }
+        });
+    };
+
+    // Password reset handler
+    const promptResetPassword = (user: UserData) => {
+        setConfirmState({
+            isOpen: true,
+            title: 'إعادة تعيين كلمة المرور',
+            message: `هل أنت متأكد من إعادة تعيين كلمة مرور المستخدم "${user.fullName}"؟ سيتم إنشاء كلمة مرور جديدة تلقائياً.`,
+            type: 'warning',
+            action: async () => {
+                try {
+                    const result = await adminService.resetPassword(Number(user.id));
+                    setResetCreds({
+                        username: result.username,
+                        password: result.generatedPassword || 'N/A'
+                    });
+                    setResetModalOpen(true);
+                    addToast('تم إعادة تعيين كلمة المرور', 'success');
+                } catch (err: any) {
+                    const msg = err.response?.data?.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور';
+                    addToast(msg, 'error');
+                }
+            }
+        });
+    };
+
+    // Delete handler
+    const promptDeleteUser = (user: UserData) => {
+        setConfirmState({
+            isOpen: true,
+            title: 'حذف مستخدم نهائياً',
+            message: `هل أنت متأكد من حذف المستخدم "${user.fullName}"؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع البيانات المرتبطة به.`,
+            type: 'danger',
+            action: async () => {
+                try {
+                    await api.delete(`/admin/users/${user.id}`);
+                    addToast('تم حذف المستخدم بنجاح', 'success');
+                    fetchUsers();
+                } catch (err: any) {
+                    const msg = err.response?.data?.message || 'حدث خطأ أثناء حذف المستخدم';
+                    addToast(msg, 'error');
+                }
+            }
+        });
     };
 
     const copyResetCredentials = () => {
@@ -288,19 +350,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                         data={users}
                         columns={getColumns()}
                         onEdit={(user) => navigate(`/admin/users/create?mode=edit&id=${user.id}&role=${user.role}`)}
-                        onDelete={async (user) => {
-                            if (window.confirm(`هل أنت متأكد من حذف المستخدم "${user.fullName}"؟ لا يمكن التراجع عن هذا الإجراء.`)) {
-                                try {
-                                    await api.delete(`/admin/users/${user.id}`);
-                                    addToast('تم حذف المستخدم بنجاح', 'success');
-                                    fetchUsers(); // Refresh list
-                                } catch (err: any) {
-                                    console.error(err);
-                                    const msg = err.response?.data?.message || 'حدث خطأ أثناء حذف المستخدم';
-                                    addToast(msg, 'error');
-                                }
-                            }
-                        }}
+                        onDelete={(user) => promptDeleteUser(user)}
                         actions={(user) => (
                             <div className="flex items-center gap-2">
                                 {user.role === 'PARENT' && (
@@ -314,7 +364,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                                 )}
                                 {/* Improved Activate/Deactivate Button */}
                                 <button
-                                    onClick={() => handleToggleActivation(user)}
+                                    onClick={() => promptToggleActivation(user)}
                                     className={`
                                         inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                                         transition-all duration-200 border
@@ -339,7 +389,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                                 </button>
                                 {/* Reset Password Button */}
                                 <button
-                                    onClick={() => handleResetPassword(user)}
+                                    onClick={() => promptResetPassword(user)}
                                     className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                                     title="إعادة تعيين كلمة المرور"
                                 >
@@ -350,6 +400,16 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
                     />
                 </motion.div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmState.isOpen}
+                onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={executeAction}
+                title={confirmState.title}
+                message={confirmState.message}
+                type={confirmState.type}
+                isLoading={confirmState.isLoading}
+            />
 
             {/* Link Children Modal */}
             <Modal
@@ -439,3 +499,4 @@ export const UsersPage: React.FC<UsersPageProps> = ({ roleFilter }) => {
         </motion.div>
     );
 };
+

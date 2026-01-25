@@ -109,7 +109,52 @@ public class ExamService {
         // Initialize results for all students in grade
         initializeResultsForExam(exam.getId());
 
+        // Notify parents if published
+        if (exam.isPublished()) {
+            notifyParentsExamPublished(exam);
+        }
+
         return mapToResponse(exam);
+    }
+
+    private void notifyParentsExamPublished(Exam exam) {
+        // Target students: All in Grade (if classSessions empty) or specific Classes
+        List<Student> students = new ArrayList<>();
+        if (exam.getClassSessions() != null && !exam.getClassSessions().isEmpty()) {
+            // Find students in these classes
+            // NOTE: StudentRepository needs findByClassSessionsIn... but simpler is
+            // findByGrade (Class logic usually by Grade)
+            // Or iterate classes:
+            for (ClassSession cs : exam.getClassSessions()) {
+                // Assuming Student has Grade, we can narrow down?
+                // Actually `studentRepository.findByGradeId` gets all in grade.
+                // If ClassSession is specific group, we might need relation Student <->
+                // ClassSession?
+                // In this system, it seems ClassSession is just Scheduled Time for a Subject +
+                // Grade + Teacher.
+                // So the students are ALL students in that Grade.
+                // (Unless we have specific Student-Class enrollment, but usually in K12 it is
+                // Grade based)
+            }
+            // Fallback to Grade
+            students = studentRepository.findByGradeId(exam.getGrade().getId());
+        } else {
+            students = studentRepository.findByGradeId(exam.getGrade().getId());
+        }
+
+        for (Student student : students) {
+            if (student.getParent() != null) {
+                notificationService.createNotification(
+                        student.getParent(),
+                        student,
+                        "امتحان جديد",
+                        String.format("تم تحديد موعد امتحان جديد: %s في مادة %s يوم %s",
+                                exam.getTitle(),
+                                exam.getSubject().getNameAr(),
+                                exam.getExamDate().toLocalDate().toString()),
+                        Notification.NotificationType.EXAM_ANNOUNCEMENT);
+            }
+        }
     }
 
     public List<ExamResponse> getTeacherExams(Long teacherId) {
@@ -280,6 +325,20 @@ public class ExamService {
         result.setStatus(ExamResult.ExamStatus.COMPLETED);
         resultRepository.save(result);
 
+        // Notify Parent of Result (Auto-Graded)
+        if (execution.getStudent().getParent() != null) {
+            notificationService.createNotification(
+                    execution.getStudent().getParent(),
+                    execution.getStudent(),
+                    "نتيجة الامتحان",
+                    String.format("حصل الطالب %s على %s/%s في امتحان %s",
+                            execution.getStudent().getUser().getFullName(),
+                            totalScore.toString(),
+                            execution.getExam().getTotalMarks().toString(),
+                            execution.getExam().getTitle()),
+                    Notification.NotificationType.EXAM_RESULT);
+        }
+
         return mapToResultResponse(execution);
     }
 
@@ -314,6 +373,8 @@ public class ExamService {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
 
+        boolean wasPublished = exam.isPublished();
+
         exam.setTitle(request.getTitle());
         exam.setFormUrl(request.getFormUrl());
         exam.setExamDate(request.getExamDate());
@@ -329,12 +390,20 @@ public class ExamService {
             exam.setEndDate(request.getEndDate());
         }
 
+        exam.setPublished(request.isPublished());
+
         if (request.getClassSessionIds() != null) {
             List<ClassSession> classes = classSessionRepository.findAllById(request.getClassSessionIds());
             exam.setClassSessions(classes);
         }
 
         exam = examRepository.save(exam);
+
+        // Notify if just published
+        if (!wasPublished && exam.isPublished()) {
+            notifyParentsExamPublished(exam);
+        }
+
         return mapToResponse(exam);
     }
 
@@ -384,15 +453,17 @@ public class ExamService {
             // Notify Parent (avoid duplicate if simply updating details, but here we assume
             // entered = result ready)
             // Consider only notifying if grade wasn't set or changed meaningfully
-            if (oldGrade == null && student.getParent() != null) {
+            if ((oldGrade == null && student.getParent() != null)
+                    || (oldGrade != null && !oldGrade.equals(grade) && student.getParent() != null)) {
                 notificationService.createNotification(
                         student.getParent(),
                         student,
                         "نتيجة الامتحان",
-                        String.format("ظهرت نتيجة امتحان %s للطالب %s. الدرجة: %s",
-                                exam.getTitle(),
+                        String.format("حصل الطالب %s على %s/%s في امتحان %s",
                                 student.getUser().getFullName(),
-                                grade.toString()),
+                                grade.toString(),
+                                exam.getTotalMarks().toString(),
+                                exam.getTitle()),
                         Notification.NotificationType.EXAM_RESULT);
             }
         }
@@ -509,6 +580,7 @@ public class ExamService {
         builder.passingScore(exam.getPassingScore());
         builder.resultConfiguration(exam.getResultConfiguration().name());
         builder.endDate(exam.getEndDate());
+        builder.published(exam.isPublished());
 
         return builder.build();
     }
@@ -589,6 +661,9 @@ public class ExamService {
 
         // 3. Initialize Results
         initializeResultsForExam(newExam.getId());
+
+        // Notify
+        notifyParentsExamPublished(newExam);
 
         return mapToResponse(newExam);
     }

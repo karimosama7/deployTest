@@ -95,21 +95,6 @@ export function PricingCards() {
                                         <span className="text-gray-400 text-xs">/ شهرياً</span>
                                     </div>
 
-                                    <div className={`p-3 rounded-xl ${pkg.lightColor} mb-4`}>
-                                        <p className={`text-xs font-bold ${pkg.textColor} mb-2`}>
-                                            المواد الدراسية:
-                                        </p>
-                                        <div className="flex flex-wrap justify-center gap-1">
-                                            {pkg.subjects.map((subject, i) => (
-                                                <span
-                                                    key={i}
-                                                    className="text-xs bg-white px-2 py-1 rounded-md text-gray-600 shadow-sm border border-gray-100"
-                                                >
-                                                    {subject}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <div className="flex-grow">
@@ -127,11 +112,14 @@ export function PricingCards() {
                                     </ul>
                                 </div>
 
-                                <button
-                                    className={`w-full py-3 rounded-xl font-bold transition-all text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 ${pkg.color}`}
+                                <a
+                                    href={`https://wa.me/201024047192?text=${encodeURIComponent(`السلام عليكم، أنا مهتم بالاشتراك في باقة ${pkg.grade}`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`block w-full py-3 rounded-xl font-bold transition-all text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 ${pkg.color} text-center`}
                                 >
                                     اشترك الآن
-                                </button>
+                                </a>
                             </div>
                         </motion.div>
                     ))}
