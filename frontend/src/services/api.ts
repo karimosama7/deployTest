@@ -13,7 +13,8 @@ const api = axios.create({
 // Request Interceptor (Add Token)
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        // Check both localStorage (rememberMe) and sessionStorage (session-only)
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -33,6 +34,7 @@ api.interceptors.response.use(
         if (error.response && error.response.status === 401) {
             // Handle unauthorized access (e.g., redirect to login or clear token)
             localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             localStorage.removeItem('user');
             // We could trigger a global event or use context here if needed, 
             // but for now let the routing logic handle the redirect on next nav.
