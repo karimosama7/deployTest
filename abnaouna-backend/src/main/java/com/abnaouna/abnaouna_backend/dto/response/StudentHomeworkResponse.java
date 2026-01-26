@@ -23,4 +23,5 @@ public class StudentHomeworkResponse {
     private String submissionStatus;
     private BigDecimal grade;
     private String feedback;
+    private String solutionUrl;
 }

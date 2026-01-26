@@ -88,7 +88,7 @@ export const StudentReportPage = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">المعدل العام</span>
-                                    <span className="font-bold text-indigo-600">{studentData.totalAverage}%</span>
+                                    <span className="font-bold text-indigo-600">{studentData.totalAverage.toFixed(2)}%</span>
                                 </div>
                             </div>
                         </Card>

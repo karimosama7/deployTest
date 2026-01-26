@@ -69,7 +69,7 @@ export const StudentDashboard = () => {
                     </h2>
                     <p className="mt-2 text-sm text-gray-500 flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full bg-green-400"></span>
-                        نسبة الحضور: {attendanceSummary ? `${attendanceSummary.attendanceRate.toFixed(0)}%` : '--'}
+                        نسبة الحضور: {attendanceSummary ? `${attendanceSummary.attendanceRate.toFixed(2)}%` : '--'}
                     </p>
                 </div>
 

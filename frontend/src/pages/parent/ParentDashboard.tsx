@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { Users, CheckCircle, AlertTriangle, ChevronLeft, Bell, Calendar, Video, Clock } from 'lucide-react';
+import { Users, CheckCircle, AlertTriangle, Bell, Calendar, Video, Clock } from 'lucide-react';
 import { Card } from '../../components/common/Card';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parentService } from '../../services/parentService';
 import { ChildResponse, NotificationResponse, StudentScheduleResponse } from '../../types/api';
@@ -88,7 +88,7 @@ export const ParentDashboard = () => {
     // Calculate stats from children data
     const totalChildren = children.length;
     const avgAttendance = children.length > 0
-        ? (children.reduce((sum, c) => sum + c.attendanceRate, 0) / children.length).toFixed(0)
+        ? (children.reduce((sum, c) => sum + c.attendanceRate, 0) / children.length).toFixed(2)
         : 0;
 
     return (
@@ -106,7 +106,7 @@ export const ParentDashboard = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <motion.div variants={itemVariants}>
                     <Card className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white border-none">
                         <div className="flex items-center gap-4">
@@ -115,7 +115,7 @@ export const ParentDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-indigo-100 font-medium">عدد الأبناء</p>
-                                <h3 className="text-3xl font-bold">{loading ? '--' : totalChildren}</h3>
+                                <h3 className="text-xl font-bold">{loading ? '--' : totalChildren}</h3>
                             </div>
                         </div>
                     </Card>
@@ -129,7 +129,7 @@ export const ParentDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-gray-500 font-medium">متوسط الحضور</p>
-                                <h3 className="text-3xl font-bold text-gray-900">{loading ? '--' : `${avgAttendance}%`}</h3>
+                                <h3 className="text-xl font-bold text-gray-900">{loading ? '--' : `${avgAttendance}%`}</h3>
                             </div>
                         </div>
                     </Card>
@@ -143,7 +143,7 @@ export const ParentDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-gray-500 font-medium">تنبيهات</p>
-                                <h3 className="text-3xl font-bold text-gray-900">
+                                <h3 className="text-xl font-bold text-gray-900">
                                     {loading ? '--' : unreadCount}
                                 </h3>
                             </div>
@@ -153,7 +153,7 @@ export const ParentDashboard = () => {
             </div>
 
             {/* Dashboard Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                 {/* Right Column: Children & Quick Actions */}
                 <div className="space-y-8">
@@ -191,7 +191,7 @@ export const ParentDashboard = () => {
                                                 </div>
                                                 <div className="text-left">
                                                     <span className={`text-lg font-bold ${child.attendanceRate >= 80 ? 'text-green-600' : 'text-amber-600'}`}>
-                                                        {child.attendanceRate}%
+                                                        {child.attendanceRate.toFixed(2)}%
                                                     </span>
                                                     <p className="text-xs text-gray-400">نسبة الحضور</p>
                                                 </div>

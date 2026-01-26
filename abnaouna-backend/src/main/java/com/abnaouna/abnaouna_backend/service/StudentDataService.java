@@ -96,6 +96,8 @@ public class StudentDataService {
                                                                 .orElse("NOT_SUBMITTED"))
                                                 .grade(submission.map(HomeworkSubmission::getGrade).orElse(null))
                                                 .feedback(submission.map(HomeworkSubmission::getFeedback).orElse(null))
+                                                .solutionUrl(submission.map(HomeworkSubmission::getSolutionUrl)
+                                                                .orElse(null))
                                                 .build();
 
                                 result.add(response);

@@ -265,6 +265,7 @@ export interface StudentHomeworkResponse {
     submissionStatus: string;
     grade?: number;
     feedback?: string;
+    solutionUrl?: string; // Teacher's solution or student's submission file to view if needed
 }
 
 export interface StudentExamResponse {

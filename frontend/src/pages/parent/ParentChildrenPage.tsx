@@ -98,7 +98,7 @@ export const ParentChildrenPage = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="bg-gray-50 rounded-xl p-4 text-center">
                                         <p className="text-gray-500 text-sm mb-1">نسبة الحضور</p>
-                                        <p className="text-2xl font-bold text-gray-900">{child.attendanceRate}%</p>
+                                        <p className="text-2xl font-bold text-gray-900">{child.attendanceRate.toFixed(2)}%</p>
                                     </div>
                                     <div className="bg-gray-50 rounded-xl p-4 text-center">
                                         <p className="text-gray-500 text-sm mb-1">الصف الدراسي</p>
