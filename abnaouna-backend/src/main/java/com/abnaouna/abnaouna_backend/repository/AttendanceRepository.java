@@ -7,21 +7,24 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
-    
+
     List<Attendance> findByClassSession(ClassSession classSession);
-    
+
     List<Attendance> findByClassSessionId(Long classSessionId);
-    
+
     List<Attendance> findByStudent(Student student);
-    
+
     List<Attendance> findByStudentId(Long studentId);
-    
+
     Optional<Attendance> findByClassSessionIdAndStudentId(Long classSessionId, Long studentId);
-    
+
     long countByStudentIdAndAttendedTrue(Long studentId);
-    
+
+    long countByStudentIdAndAttendedTrueAndClassSession_ScheduledTimeAfter(Long studentId, LocalDateTime dateTime);
+
     long countByStudentId(Long studentId);
 }

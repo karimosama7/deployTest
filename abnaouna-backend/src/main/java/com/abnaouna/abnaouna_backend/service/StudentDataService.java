@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -157,17 +158,41 @@ public class StudentDataService {
         }
 
         /**
-         * Get student's attendance records
+         * Get student's attendance records (All past classes with status)
          */
         public List<StudentAttendanceResponse> getAttendance(Long studentId) {
                 Student student = studentRepository.findById(studentId)
                                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-                List<Attendance> attendanceList = attendanceRepository.findByStudentId(studentId);
+                if (student.getGrade() == null) {
+                        return new ArrayList<>();
+                }
 
-                return attendanceList.stream()
-                                .map(att -> {
-                                        ClassSession cls = att.getClassSession();
+                // Get all past classes for the student's grade
+                List<ClassSession> pastClasses = classSessionRepository
+                                .findByGradeIdOrderByScheduledTimeDesc(student.getGrade().getId())
+                                .stream()
+                                .filter(c -> c.getScheduledTime().isBefore(LocalDateTime.now()))
+                                .collect(Collectors.toList());
+
+                // Get existing attendance records
+                List<Attendance> attendanceRecords = attendanceRepository.findByStudentId(studentId);
+                Map<Long, Boolean> attendanceMap = attendanceRecords.stream()
+                                .collect(Collectors.toMap(
+                                                a -> a.getClassSession().getId(),
+                                                Attendance::getAttended,
+                                                (existing, replacement) -> existing)); // In case of duplicates?
+
+                return pastClasses.stream()
+                                .map(cls -> {
+                                        Boolean attended = attendanceMap.getOrDefault(cls.getId(), false);
+                                        // Find marked time if available
+                                        LocalDateTime markedAt = attendanceRecords.stream()
+                                                        .filter(a -> a.getClassSession().getId().equals(cls.getId()))
+                                                        .findFirst()
+                                                        .map(Attendance::getMarkedAt)
+                                                        .orElse(null);
+
                                         return StudentAttendanceResponse.builder()
                                                         .classId(cls.getId())
                                                         .classTitle(cls.getTitle())
@@ -175,8 +200,8 @@ public class StudentDataService {
                                                                         ? cls.getSubject().getNameAr()
                                                                         : null)
                                                         .scheduledTime(cls.getScheduledTime())
-                                                        .attended(att.getAttended())
-                                                        .markedAt(att.getMarkedAt())
+                                                        .attended(attended)
+                                                        .markedAt(markedAt)
                                                         .build();
                                 })
                                 .collect(Collectors.toList());
@@ -186,7 +211,29 @@ public class StudentDataService {
          * Get attendance summary (for dashboard)
          */
         public AttendanceSummary getAttendanceSummary(Long studentId) {
-                long total = attendanceRepository.countByStudentId(studentId);
+                Student student = studentRepository.findById(studentId)
+                                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+                if (student.getGrade() == null) {
+                        return AttendanceSummary.builder()
+                                        .totalClasses(0L)
+                                        .attendedClasses(0L)
+                                        .attendanceRate(0.0)
+                                        .build();
+                }
+
+                // Total classes = All classes in the past for this Grade
+                long pastClasses = classSessionRepository.countByGradeIdAndScheduledTimeBefore(
+                                student.getGrade().getId(), LocalDateTime.now());
+
+                // Also include future classes that the student HAS attended (early check-in)
+                long futureAttended = attendanceRepository
+                                .countByStudentIdAndAttendedTrueAndClassSession_ScheduledTimeAfter(
+                                                studentId, LocalDateTime.now());
+
+                long total = pastClasses + futureAttended;
+
+                // Attended classes = Actual presence records
                 long attended = attendanceRepository.countByStudentIdAndAttendedTrue(studentId);
 
                 return AttendanceSummary.builder()

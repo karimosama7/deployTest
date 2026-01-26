@@ -31,4 +31,6 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, Long
     List<ClassSession> findByGradeIdOrderByScheduledTimeDesc(Long gradeId);
 
     long countByTeacherId(Long teacherId);
+
+    long countByGradeIdAndScheduledTimeBefore(Long gradeId, LocalDateTime localDateTime);
 }

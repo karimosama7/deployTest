@@ -136,14 +136,23 @@ export const TeacherClassesPage = () => {
     };
 
     const handleStartClass = async (classId: number) => {
-        // Removed confirmation
+        const cls = classes.find(c => c.id === classId);
+        if (!cls) return;
+
+        // Open meeting immediately to avoid popup blockers
+        if (cls.teamsMeetingUrl) {
+            window.open(cls.teamsMeetingUrl, '_blank');
+        } else {
+            addToast('لا يوجد رابط اجتماع لهذه الحصة', 'warning');
+        }
+
         try {
             await teacherService.startClass(classId);
             addToast('تم بدء الحصة بنجاح', 'success');
             loadData();
         } catch (error) {
             console.error('Failed to start class', error);
-            addToast('فشل بدء الحصة', 'error');
+            addToast('فشل بدء الحصة (ولكن تم فتح الرابط)', 'warning');
         }
     };
 

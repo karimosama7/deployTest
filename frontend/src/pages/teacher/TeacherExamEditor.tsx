@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { teacherService } from '../../services/teacherService';
 import { ExamRequest, ExamQuestionRequest, ExamOptionRequest, Subject, ClassSessionResponse } from '../../types/api';
 import { Button } from '../../components/common/Button';
@@ -150,21 +151,26 @@ export const TeacherExamEditor: React.FC = () => {
         const formData = new FormData();
         formData.append('file', file);
         try {
-            // Using a direct fetch or axios call here, but best to put in a service
-            // Creating a quick service call pattern here
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8080/api/media/upload', {
-                method: 'POST',
+            const response = await api.post('/media/upload', formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
+                    'Content-Type': 'multipart/form-data'
+                }
             });
-            const data = await response.json();
-            return `http://localhost:8080${data.url}`;
+            // Construct full URL if needed, or rely on relative if proxy is set.
+            // Assuming response.data.url is like "/api/media/files/..."
+            // We need to return a URL that the <img> tag can load.
+            const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace('/api', '');
+            return `${baseUrl}${response.data.url}`;
         } catch (err) {
             console.error("Upload failed", err);
             return '';
+        }
+    };
+
+    const handleQuestionImageChange = async (qIndex: number, file: File) => {
+        const url = await handleImageUpload(file);
+        if (url) {
+            handleQuestionChange(qIndex, 'imageUrl', url);
         }
     };
 
@@ -177,10 +183,18 @@ export const TeacherExamEditor: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
+        // Validation
+        if (formData.passingScore !== undefined && formData.totalMarks !== undefined) {
+            if (formData.passingScore > formData.totalMarks) {
+                setError('Passing score cannot be greater than total marks.');
+                return;
+            }
+        }
+
         // Prevent double-submit
         if (isSubmitting) return;
-        
+
         setIsSubmitting(true);
         setError(null);
         try {
@@ -306,9 +320,21 @@ export const TeacherExamEditor: React.FC = () => {
                                     type="number"
                                     label="Passing Score"
                                     value={formData.passingScore}
-                                    onChange={e => setFormData({ ...formData, passingScore: Number(e.target.value) })}
                                     required
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Result Release</label>
+                                <select
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 border px-3"
+                                    value={formData.resultConfiguration}
+                                    onChange={e => setFormData({ ...formData, resultConfiguration: e.target.value as any })}
+                                >
+                                    <option value="IMMEDIATE">Immediately after submission</option>
+                                    <option value="AFTER_DATE">After exam end date</option>
+                                    <option value="MANUAL">Manually by teacher</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -347,6 +373,31 @@ export const TeacherExamEditor: React.FC = () => {
                                             onChange={e => handleQuestionChange(qIndex, 'text', e.target.value)}
                                             required
                                         />
+                                        <div className="mt-2 text-sm text-gray-500">
+                                            <label className="block text-xs mb-1">Question Image (Optional)</label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={e => {
+                                                    if (e.target.files?.[0]) {
+                                                        handleQuestionImageChange(qIndex, e.target.files[0]);
+                                                    }
+                                                }}
+                                                className="text-xs"
+                                            />
+                                            {question.imageUrl && (
+                                                <div className="mt-1 relative inline-block">
+                                                    <img src={question.imageUrl} alt="Question" className="h-20 object-contain rounded border" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleQuestionChange(qIndex, 'imageUrl', '')}
+                                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5"
+                                                    >
+                                                        <XCircle className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="w-24">
                                         <Input
