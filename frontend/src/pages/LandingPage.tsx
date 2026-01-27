@@ -8,7 +8,7 @@ import { PricingCards } from '../components/landing/PricingCards'
 
 import { Footer } from '../components/landing/Footer'
 import { useNavigate } from 'react-router-dom';
-import Logo from '../assets/logo.png';
+import Logo from '../assets/Logo.png';
 
 import { ZigZagFeatures } from '../components/landing/ZigZagFeatures'
 

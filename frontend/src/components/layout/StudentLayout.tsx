@@ -4,7 +4,7 @@ import { Home, FileText, BarChart2, X, Menu, LogOut, Video } from 'lucide-react'
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { Outlet, useNavigate } from 'react-router-dom';
-import Logo from '../../assets/logo.png';
+import Logo from '../../assets/Logo.png';
 
 const StudentSidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { user, logout } = useAuth();

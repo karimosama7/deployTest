@@ -1,6 +1,6 @@
 import React from 'react'
 import { Mail, MessageCircle } from 'lucide-react'
-import Logo from '../../assets/logo.png';
+import Logo from '../../assets/Logo.png';
 
 export function Footer() {
     return (

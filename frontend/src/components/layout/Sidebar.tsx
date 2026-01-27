@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { Home, Users, BookOpen, GraduationCap, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
-import Logo from '../../assets/logo.png';
+import Logo from '../../assets/Logo.png';
 
 interface SidebarProps {
     isOpen: boolean;
