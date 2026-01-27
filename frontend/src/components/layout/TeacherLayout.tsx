@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, FileText, BarChart2, X, Menu, LogOut, Video } from 'lucide-react';
+import { Home, FileText, BarChart2, X, Menu, LogOut, Video } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import Logo from '../../assets/Logo.png';
@@ -51,7 +51,7 @@ const TeacherSidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
             </div>
 
             {/* Desktop Sidebar */}
-            <div className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 z-30">
+            <div className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 md:right-0 z-30">
                 <div className="flex-1 flex flex-col min-h-0 border-l border-gray-200 bg-white">
                     <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
                         <div className="flex items-center flex-shrink-0 px-4">

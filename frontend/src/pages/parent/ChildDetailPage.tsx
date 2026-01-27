@@ -168,7 +168,7 @@ export const ChildDetailPage = () => {
                         transition={{ duration: 0.2 }}
                     >
                         {activeTab === 'schedule' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                 {schedule.length === 0 ? (
                                     <Card className="col-span-full py-12 text-center text-gray-400 bg-gray-50 border-dashed border-2">
                                         <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -217,7 +217,7 @@ export const ChildDetailPage = () => {
                         )}
 
                         {activeTab === 'homework' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {homework.length === 0 ? (
                                     <Card className="col-span-full py-12 text-center text-gray-400 bg-gray-50 border-dashed border-2">
                                         <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -279,7 +279,7 @@ export const ChildDetailPage = () => {
                         )}
 
                         {activeTab === 'exams' && (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {exams.length === 0 ? (
                                     <Card className="col-span-full py-12 text-center text-gray-400 bg-gray-50 border-dashed border-2">
                                         <BarChart2 className="w-12 h-12 mx-auto mb-3 opacity-50" />

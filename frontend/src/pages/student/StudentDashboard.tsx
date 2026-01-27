@@ -163,13 +163,13 @@ export const StudentDashboard = () => {
                                 <motion.div
                                     key={cls.id}
                                     whileHover={{ scale: 1.01 }}
-                                    className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all group"
+                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all group gap-4"
                                 >
-                                    <div className="flex items-center">
+                                    <div className="flex items-center w-full sm:w-auto">
                                         <div className="flex-shrink-0 h-14 w-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center border-2 border-white shadow-sm">
                                             <Book className="w-6 h-6 text-indigo-600" />
                                         </div>
-                                        <div className="mr-4">
+                                        <div className="mr-4 flex-1 sm:flex-none">
                                             <h4 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
                                                 {cls.subjectName || cls.title}
                                             </h4>

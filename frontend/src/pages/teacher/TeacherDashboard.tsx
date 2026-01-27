@@ -180,7 +180,7 @@ export const TeacherDashboard = () => {
           <div className="space-y-4">
             {todayClasses.map((item) => (
               <Card key={item.id} className="border-l-4 border-l-indigo-600 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex gap-4">
                     <div className="bg-indigo-50 w-16 h-16 rounded-lg flex flex-col items-center justify-center text-indigo-600">
                       <span className="text-xs font-bold">اليوم</span>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Book, FileText, BarChart2, X, Bell, Menu, LogOut, Video } from 'lucide-react';
+import { Home, FileText, BarChart2, X, Menu, LogOut, Video } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { Outlet, useNavigate } from 'react-router-dom';
@@ -50,7 +50,7 @@ const StudentSidebar = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 <div className="flex-shrink-0 w-14" aria-hidden="true" />
             </div>
 
-            <div className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 z-30">
+            <div className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 md:right-0 z-30">
                 <div className="flex-1 flex flex-col min-h-0 border-l border-gray-200 bg-white">
                     <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
                         <div className="flex items-center flex-shrink-0 px-4">
@@ -99,7 +99,7 @@ export const StudentLayout: React.FC = () => {
     return (
         <div className="h-screen flex overflow-hidden bg-gray-100">
             <StudentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-            <div className="flex flex-col w-0 flex-1 overflow-hidden md:mr-64">
+            <div className="flex flex-col w-0 flex-1 overflow-hidden md:mr-56">
                 <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow md:hidden">
                     <button type="button" className="px-4 border-l border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onClick={() => setSidebarOpen(true)}>
                         <span className="sr-only">Open sidebar</span>
