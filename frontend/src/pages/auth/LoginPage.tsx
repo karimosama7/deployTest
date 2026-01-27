@@ -4,7 +4,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LoginHero from '../../assets/login-hero.png';
-import Logo from '../../assets/logo.png';
+import Logo from '../../assets/Logo.png';
 import { motion } from 'framer-motion';
 
 export const LoginPage = () => {
