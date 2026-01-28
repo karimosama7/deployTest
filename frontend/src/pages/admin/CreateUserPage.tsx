@@ -59,6 +59,7 @@ export const CreateUserPage = () => {
                     adminService.getGrades(),
                     adminService.getSubjects()
                 ]);
+                console.log('Fetched grades from API:', grades);
                 setParentsList(parents.map(p => ({ value: String(p.id), label: p.fullName })));
                 setStudentsList(students.map(s => ({ value: String(s.id), label: s.fullName })));
                 setGradeOptions(grades.map(g => ({ value: String(g.id), label: g.name })));
