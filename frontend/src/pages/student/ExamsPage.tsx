@@ -92,21 +92,20 @@ export const ExamsPage = () => {
 
     const isUpcoming = (exam: StudentExamResponse) => {
         // Show in "Upcoming/Active" if:
-        // 1. Status is PENDING (not completed/failed/late)
-        // 2. AND no grade yet (hasn't been graded)
-        // 3. AND status is not COMPLETED, FAILED, LATE, or EXPIRED
-        const completedStatuses = ['COMPLETED', 'FAILED', 'LATE', 'EXPIRED'];
-        return (exam.status === 'UPCOMING' || exam.status === 'PENDING')
-            && exam.grade === undefined
-            && !completedStatuses.includes(exam.status.toUpperCase());
+        // 1. Status is PENDING or UPCOMING (not completed/failed/late)
+        // 2. AND no grade yet (grade is null or undefined)
+        const pendingStatuses = ['UPCOMING', 'PENDING'];
+        const hasNoGrade = exam.grade == null; // Checks for both null and undefined
+        return pendingStatuses.includes(exam.status?.toUpperCase()) && hasNoGrade;
     };
 
     const isPast = (exam: StudentExamResponse) => {
         // Show in "Past" if:
         // 1. Status is COMPLETED, FAILED, LATE, or EXPIRED
-        // 2. OR has a grade
+        // 2. OR has an actual grade (not null/undefined)
         const completedStatuses = ['COMPLETED', 'FAILED', 'LATE', 'EXPIRED'];
-        return completedStatuses.includes(exam.status.toUpperCase()) || exam.grade !== undefined;
+        const hasGrade = exam.grade != null; // Has actual grade value
+        return completedStatuses.includes(exam.status?.toUpperCase()) || hasGrade;
     };
 
     const upcomingExams = exams.filter(e => isUpcoming(e));
