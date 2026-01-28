@@ -34,7 +34,7 @@ export function LandingPage() {
             </a>
             <button
               onClick={() => navigate('/login')}
-              className="text-gray-600 font-medium hover:text-gray-900 hidden md:block"
+              className="text-gray-600 font-medium hover:text-gray-900"
             >
               تسجيل الدخول
             </button>
