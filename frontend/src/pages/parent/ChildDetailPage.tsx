@@ -326,9 +326,13 @@ export const ChildDetailPage = () => {
                                                         <Eye className="w-3 h-3" />
                                                         عرض النموذج
                                                     </button>
+                                                ) : exam.grade != null ? (
+                                                    <button disabled className="w-full py-2 bg-green-100 text-green-600 rounded-lg text-xs font-medium cursor-not-allowed">
+                                                        مكتمل
+                                                    </button>
                                                 ) : (
                                                     <button disabled className="w-full py-2 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium cursor-not-allowed">
-                                                        {exam.status === 'UPCOMING' ? 'قادم' : 'غير متاح'}
+                                                        {['UPCOMING', 'PENDING'].includes(exam.status?.toUpperCase()) ? 'قادم' : 'غير متاح'}
                                                     </button>
                                                 )}
                                             </div>
