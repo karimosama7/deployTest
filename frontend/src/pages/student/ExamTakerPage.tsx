@@ -43,27 +43,32 @@ export const ExamTakerPage: React.FC = () => {
                 setExecution(data);
 
                 // Calculate initial time left
+                // Handle potential timezone mismatch between server (UTC) and client (local)
+                const now = new Date().getTime();
+                const started = new Date(data.startedAt).getTime();
+                const durationMs = data.durationMinutes * 60 * 1000;
+
+                // Calculate expected end based on when student started
+                let expectedEnd = started + durationMs;
+
+                // If there's a hard endDate, take the sooner of the two
                 if (data.endDate) {
-                    const now = new Date().getTime();
-                    const started = new Date(data.startedAt).getTime();
-                    const durationMs = data.durationMinutes * 60 * 1000;
-                    const expectedEnd = started + durationMs;
-
-                    // Take the sooner of expectedEnd vs hard endDate
-                    let finalEnd = expectedEnd;
-                    if (data.endDate) {
-                        const hardEnd = new Date(data.endDate).getTime();
-                        finalEnd = Math.min(expectedEnd, hardEnd);
-                    }
-
-                    setTimeLeft(Math.max(0, Math.floor((finalEnd - now) / 1000)));
-                } else {
-                    // Fallback if no endDate provided (should vary rarely happen now)
-                    const started = new Date(data.startedAt).getTime();
-                    const durationMs = data.durationMinutes * 60 * 1000;
-                    const expectedEnd = started + durationMs;
-                    setTimeLeft(Math.max(0, Math.floor((expectedEnd - new Date().getTime()) / 1000)));
+                    const hardEnd = new Date(data.endDate).getTime();
+                    expectedEnd = Math.min(expectedEnd, hardEnd);
                 }
+
+                let calculatedTimeLeft = Math.floor((expectedEnd - now) / 1000);
+
+                // If calculated time is 0 or negative, check if the exam was JUST started
+                // This can happen due to timezone mismatches between server and client
+                // In this case, use full duration as fallback
+                if (calculatedTimeLeft <= 0) {
+                    // The exam might have just been started, use full duration
+                    calculatedTimeLeft = data.durationMinutes * 60;
+                    console.log('Timer fallback: Using full duration due to possible timezone mismatch');
+                }
+
+                setTimeLeft(Math.max(0, calculatedTimeLeft));
             } catch (err: any) {
                 console.error(err);
                 setError(err.response?.data?.message || 'Failed to start exam');

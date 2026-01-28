@@ -320,6 +320,7 @@ export const TeacherExamEditor: React.FC = () => {
                                     type="number"
                                     label="Passing Score"
                                     value={formData.passingScore}
+                                    onChange={e => setFormData({ ...formData, passingScore: Number(e.target.value) })}
                                     required
                                 />
                             </div>
