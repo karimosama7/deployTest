@@ -318,7 +318,7 @@ export const ChildDetailPage = () => {
                                                     </div>
                                                 </div>
 
-                                                {exam.executionId && exam.status === 'COMPLETED' ? (
+                                                {exam.executionId ? (
                                                     <button
                                                         onClick={() => navigate(`/parent/exams/solution/${exam.executionId}`)}
                                                         className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-md shadow-indigo-200"
