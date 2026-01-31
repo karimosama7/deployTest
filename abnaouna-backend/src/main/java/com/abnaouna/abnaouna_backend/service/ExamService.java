@@ -194,8 +194,11 @@ public class ExamService {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
 
-        if (exam.getExamDate().isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Exam has not started yet");
+        // Allow 3-hour tolerance for timezone differences (server might be UTC, Egypt
+        // is +2/+3)
+        LocalDateTime nowWithTolerance = LocalDateTime.now().plusHours(3);
+        if (exam.getExamDate() != null && exam.getExamDate().isAfter(nowWithTolerance)) {
+            throw new RuntimeException("Exam has not started yet. Exam starts at: " + exam.getExamDate());
         }
 
         if (exam.getEndDate() != null && exam.getEndDate().isBefore(LocalDateTime.now())) {
@@ -428,12 +431,12 @@ public class ExamService {
     public void deleteExam(Long examId, Long teacherId) {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
-        
+
         // Verify ownership
         if (!exam.getTeacher().getId().equals(teacherId)) {
             throw new RuntimeException("You can only delete exams you created");
         }
-        
+
         examRepository.delete(exam);
     }
 
@@ -762,7 +765,8 @@ public class ExamService {
     }
 
     /**
-     * Get student exam solution for teacher/parent view (no student ownership check)
+     * Get student exam solution for teacher/parent view (no student ownership
+     * check)
      */
     public com.abnaouna.abnaouna_backend.dto.response.StudentExamSolutionResponse getStudentExamSolutionForTeacher(
             Long executionId) {

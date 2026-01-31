@@ -5,6 +5,7 @@ import { Hero } from '../components/landing/Hero'
 import { Features } from '../components/landing/Features'
 import { TeacherCredentials } from '../components/landing/TeacherCredentials'
 import { PricingCards } from '../components/landing/PricingCards'
+import { VideoSection } from '../components/landing/VideoSection'
 
 import { Footer } from '../components/landing/Footer'
 import { useNavigate } from 'react-router-dom';
@@ -68,6 +69,7 @@ export function LandingPage() {
         <ZigZagFeatures />
         {/* <TrustSignals /> Removed as per request */}
         <Features />
+        <VideoSection />
         {/* <ClassroomSection /> Removed as per request */}
         <PricingCards />
       </main>
