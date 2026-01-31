@@ -12,6 +12,7 @@ import Logo from '../assets/Logo.png';
 
 import { ZigZagFeatures } from '../components/landing/ZigZagFeatures'
 import { VideoGrid } from '../components/landing/VideoGrid'
+import { PlatformWorkflow } from '../components/landing/PlatformWorkflow'
 import { VideoSection } from '../components/landing/VideoSection'
 
 export function LandingPage() {
@@ -68,6 +69,7 @@ export function LandingPage() {
       <main className="bg-gradient-to-b from-white to-blue-50/30">
         <Hero />
         <ZigZagFeatures />
+        <PlatformWorkflow />
         <VideoGrid />
         <VideoSection />
         {/* <TrustSignals /> Removed as per request */}
