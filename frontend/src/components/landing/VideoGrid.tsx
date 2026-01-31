@@ -5,6 +5,7 @@ import { Play, X, User, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react
 // Custom thumbnails
 import VideoThumb1 from '../../assets/video-thumb-1.jpg';
 import VideoThumb2 from '../../assets/video-thumb-2.jpg';
+import MaryamThumb from '../../assets/maryam-thumb.jpg';
 
 interface Video {
     id: string;
@@ -28,6 +29,13 @@ const videos: Video[] = [
         teacherName: 'أ/ إيمان حسن',
         subject: 'اللغة الإنجليزية',
         thumbnail: VideoThumb2,
+    },
+    {
+        id: '3',
+        youtubeId: '6LTqLL3ohh0',
+        teacherName: 'المعلمة مريم',
+        subject: 'الرياضيات',
+        thumbnail: MaryamThumb,
     },
 ];
 

@@ -13,7 +13,7 @@ import Logo from '../assets/Logo.png';
 import { ZigZagFeatures } from '../components/landing/ZigZagFeatures'
 import { VideoGrid } from '../components/landing/VideoGrid'
 import { PlatformWorkflow } from '../components/landing/PlatformWorkflow'
-import { VideoSection } from '../components/landing/VideoSection'
+
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ export function LandingPage() {
         <ZigZagFeatures />
         <PlatformWorkflow />
         <VideoGrid />
-        <VideoSection />
+
         {/* <TrustSignals /> Removed as per request */}
         <Features />
         {/* <ClassroomSection /> Removed as per request */}
