@@ -5,13 +5,14 @@ import { Hero } from '../components/landing/Hero'
 import { Features } from '../components/landing/Features'
 import { TeacherCredentials } from '../components/landing/TeacherCredentials'
 import { PricingCards } from '../components/landing/PricingCards'
-import { VideoSection } from '../components/landing/VideoSection'
 
 import { Footer } from '../components/landing/Footer'
 import { useNavigate } from 'react-router-dom';
 import Logo from '../assets/Logo.png';
 
 import { ZigZagFeatures } from '../components/landing/ZigZagFeatures'
+import { VideoGrid } from '../components/landing/VideoGrid'
+import { VideoSection } from '../components/landing/VideoSection'
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -67,9 +68,10 @@ export function LandingPage() {
       <main className="bg-gradient-to-b from-white to-blue-50/30">
         <Hero />
         <ZigZagFeatures />
+        <VideoGrid />
+        <VideoSection />
         {/* <TrustSignals /> Removed as per request */}
         <Features />
-        <VideoSection />
         {/* <ClassroomSection /> Removed as per request */}
         <PricingCards />
       </main>

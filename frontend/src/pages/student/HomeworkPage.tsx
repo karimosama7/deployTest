@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Upload, CheckCircle, Clock, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { FileText, Upload, CheckCircle, Clock, AlertCircle, ExternalLink, Loader2, Eye } from 'lucide-react';
 import { Card } from '../../components/common/Card';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
@@ -16,6 +16,9 @@ export const HomeworkPage = () => {
     const [selectedHomework, setSelectedHomework] = useState<StudentHomeworkResponse | null>(null);
     const [submissionLink, setSubmissionLink] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [selectedViewHomework, setSelectedViewHomework] = useState<StudentHomeworkResponse | null>(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const { addToast } = useToast();
 
     useEffect(() => {
@@ -75,6 +78,27 @@ export const HomeworkPage = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // Helper to check if URL is an image (including Base64 data URLs)
+    const isImageUrl = (url: string) => {
+        return url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ||
+            url.startsWith('blob:') ||
+            url.includes('/api/files/') ||
+            url.startsWith('data:image/');
+    };
+
+    // Parse homework URL which may contain comma-separated image URLs
+    const parseHomeworkUrls = (homeworkUrl: string | undefined): string[] => {
+        if (!homeworkUrl) return [];
+        return homeworkUrl.split(',').map(url => url.trim()).filter(url => url.length > 0);
+    };
+
+    // Open view modal
+    const handleViewHomework = (hw: StudentHomeworkResponse) => {
+        setSelectedViewHomework(hw);
+        setSelectedImageIndex(0);
+        setIsViewModalOpen(true);
     };
 
     // Split homework into pending and submitted
@@ -172,10 +196,13 @@ export const HomeworkPage = () => {
                                                         آخر موعد: {dueInfo.text}
                                                     </span>
                                                     {hw.homeworkUrl && (
-                                                        <a href={hw.homeworkUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 text-sm font-bold hover:underline flex items-center gap-1">
-                                                            <ExternalLink className="w-4 h-4" />
+                                                        <button
+                                                            onClick={() => handleViewHomework(hw)}
+                                                            className="text-indigo-600 text-sm font-bold hover:underline flex items-center gap-1"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
                                                             عرض ملف الواجب
-                                                        </a>
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
@@ -287,6 +314,85 @@ export const HomeworkPage = () => {
                                 <CheckCircle className="w-4 h-4 ml-2" />
                             )}
                             تأكيد التسليم
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* View Homework Modal */}
+            <Modal
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                title={`ملف الواجب: ${selectedViewHomework?.title}`}
+            >
+                <div className="space-y-4">
+                    {selectedViewHomework?.homeworkUrl && (() => {
+                        const urls = parseHomeworkUrls(selectedViewHomework.homeworkUrl);
+                        const hasImages = urls.some(url => isImageUrl(url));
+
+                        if (hasImages) {
+                            return (
+                                <div className="space-y-4">
+                                    {/* Main Image */}
+                                    <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+                                        <img
+                                            src={urls[selectedImageIndex]}
+                                            alt={`صورة ${selectedImageIndex + 1}`}
+                                            className="w-full max-h-96 object-contain mx-auto"
+                                        />
+                                        {urls.length > 1 && (
+                                            <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                                                {selectedImageIndex + 1} / {urls.length}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Thumbnails */}
+                                    {urls.length > 1 && (
+                                        <div className="flex gap-2 overflow-x-auto pb-2">
+                                            {urls.map((url, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => setSelectedImageIndex(index)}
+                                                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === index
+                                                        ? 'border-indigo-500 ring-2 ring-indigo-200'
+                                                        : 'border-gray-200 hover:border-gray-300'
+                                                        }`}
+                                                >
+                                                    <img
+                                                        src={url}
+                                                        alt={`صورة ${index + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        } else {
+                            // External link
+                            return (
+                                <div className="text-center py-6">
+                                    <ExternalLink className="w-16 h-16 text-indigo-500 mx-auto mb-4" />
+                                    <p className="text-gray-600 mb-4">ملف الواجب موجود على رابط خارجي</p>
+                                    <a
+                                        href={urls[0]}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors"
+                                    >
+                                        <ExternalLink className="w-5 h-5" />
+                                        فتح الرابط
+                                    </a>
+                                </div>
+                            );
+                        }
+                    })()}
+
+                    <div className="flex justify-end">
+                        <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>
+                            إغلاق
                         </Button>
                     </div>
                 </div>
